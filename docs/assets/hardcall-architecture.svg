@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0B0F19"/>
+      <stop offset="50%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="accentRed" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#EF4444"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+    <linearGradient id="accentBlue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+    <linearGradient id="accentGreen" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#14B8A6"/>
+    </linearGradient>
+    <linearGradient id="accentPurple" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="680" rx="18" fill="url(#bgGrad)"/>
+  <rect x="16" y="16" width="1168" height="648" rx="14" fill="none" stroke="#1E293B" stroke-width="1.5"/>
+
+  <!-- Header -->
+  <text x="600" y="54" text-anchor="middle" fill="#F8FAFC" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="800">HardCall 全栈系统架构图 — 52ms 毫秒级实时打断 AI 高压语音面试与路演模拟器</text>
+  <text x="600" y="80" text-anchor="middle" fill="#94A3B8" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500">Dual-Client Voice Simulator (Next.js 16 Web + Swift 6 macOS/iOS) · Real-Time Barge-In State Machine · Enterprise RTP Gateway Ready</text>
+
+  <!-- Layer 1: Multi-Platform Clients -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="105" width="1120" height="145" rx="12" fill="#1E293B" fill-opacity="0.7" stroke="#334155" stroke-width="1.5"/>
+    <rect x="40" y="105" width="8" height="145" rx="4" fill="url(#accentBlue)"/>
+    <text x="66" y="132" fill="#38BDF8" font-family="system-ui, sans-serif" font-size="15" font-weight="700">01 多端实时语音交互层 (Multi-Platform Voice Clients)</text>
+
+    <!-- Box 1.1 -->
+    <rect x="66" y="146" width="340" height="88" rx="8" fill="#0F172A" stroke="#0284C7" stroke-width="1.2"/>
+    <text x="84" y="170" fill="#F8FAFC" font-family="system-ui, sans-serif" font-size="14" font-weight="700">🌐 Web 实时语音舱 (Next.js 16 + Web Audio)</text>
+    <text x="84" y="192" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• Web Speech API 实时流式语音识别 (ASR)</text>
+    <text x="84" y="210" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 60FPS 声波能量环 + 文本/麦克风双模无缝切换</text>
+    <text x="84" y="226" fill="#38BDF8" font-family="system-ui, sans-serif" font-size="11">Cloudflare Workers 全球边缘静态加速</text>
+
+    <!-- Box 1.2 -->
+    <rect x="430" y="146" width="340" height="88" rx="8" fill="#0F172A" stroke="#F97316" stroke-width="1.2"/>
+    <text x="448" y="170" fill="#F8FAFC" font-family="system-ui, sans-serif" font-size="14" font-weight="700">🍎 Apple 原生客户端 (Swift 6 + SwiftUI)</text>
+    <text x="448" y="192" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• AVAudioEngine + SFSpeechRecognizer 原生低延迟</text>
+    <text x="448" y="210" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• AirPods 免提通话体验 + 触觉反馈 (Haptic Engine)</text>
+    <text x="448" y="226" fill="#FB923C" font-family="system-ui, sans-serif" font-size="11">macOS (.dmg) 独立分发 + iOS 架构同源</text>
+
+    <!-- Box 1.3 -->
+    <rect x="794" y="146" width="346" height="88" rx="8" fill="#0F172A" stroke="#10B981" stroke-width="1.2"/>
+    <text x="812" y="170" fill="#F8FAFC" font-family="system-ui, sans-serif" font-size="14" font-weight="700">📚 LeetCode 式 4 大结构化高压题库</text>
+    <text x="812" y="192" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 01 大厂行为面试 (FAANG STAR 追问与事故复盘)</text>
+    <text x="812" y="210" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 02 系统设计答辩 (8万QPS幂等) / 03 薪资谈判破局</text>
+    <text x="812" y="226" fill="#34D399" font-family="system-ui, sans-serif" font-size="11">• 04 演说与路演训练 (YC 2分钟电梯路演 / 架构评审)</text>
+  </g>
+
+  <!-- Connector Arrows 1 -> 2 -->
+  <path d="M236 250 L236 280 M600 250 L600 280 M967 250 L967 280" stroke="#475569" stroke-width="2" stroke-dasharray="4 4"/>
+
+  <!-- Layer 2: 52ms Barge-In & Interruption Kernel -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="280" width="1120" height="175" rx="12" fill="#1E293B" fill-opacity="0.7" stroke="#334155" stroke-width="1.5"/>
+    <rect x="40" y="280" width="8" height="175" rx="4" fill="url(#accentRed)"/>
+    <text x="66" y="308" fill="#F87171" font-family="system-ui, sans-serif" font-size="15" font-weight="700">02 52ms 毫秒级实时打断与压力状态机内核 (Real-Time Barge-In &amp; Pressure Engine)</text>
+
+    <!-- Step 1 -->
+    <rect x="66" y="324" width="250" height="112" rx="8" fill="#0F172A" stroke="#EF4444" stroke-width="1.2"/>
+    <text x="82" y="348" fill="#FCA5A5" font-family="system-ui, sans-serif" font-size="13" font-weight="700">① 实时语音流特征嗅探</text>
+    <text x="82" y="370" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 废话词检测 (um / like / 那个 / 然后)</text>
+    <text x="82" y="390" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 量化指标缺失检测 (无数字/延迟/ROI)</text>
+    <text x="82" y="410" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 超时啰嗦熔断 (&gt;15s 未切入核心结论)</text>
+    <text x="82" y="427" fill="#F87171" font-family="system-ui, sans-serif" font-size="11">RMS 能量检测 + 增量 Token 扫描</text>
+
+    <!-- Arrow -->
+    <path d="M316 380 L344 380" stroke="#EF4444" stroke-width="2"/>
+
+    <!-- Step 2 -->
+    <rect x="344" y="324" width="255" height="112" rx="8" fill="#0F172A" stroke="#F97316" stroke-width="1.2"/>
+    <text x="360" y="348" fill="#FDBA74" font-family="system-ui, sans-serif" font-size="13" font-weight="700">② 52ms 强行打断 (Barge-In)</text>
+    <text x="360" y="370" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 立即挂起用户麦克风采集通道</text>
+    <text x="360" y="390" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 触发 clearAudio 清空下行缓冲队列</text>
+    <text x="360" y="410" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 考官语音零延迟抢话切入追问</text>
+    <text x="360" y="427" fill="#FB923C" font-family="system-ui, sans-serif" font-size="11">全双工状态机：LISTENING → BARGE_IN</text>
+
+    <!-- Arrow -->
+    <path d="M599 380 L627 380" stroke="#F97316" stroke-width="2"/>
+
+    <!-- Step 3 -->
+    <rect x="627" y="324" width="245" height="112" rx="8" fill="#0F172A" stroke="#A855F7" stroke-width="1.2"/>
+    <text x="643" y="348" fill="#D8B4FE" font-family="system-ui, sans-serif" font-size="13" font-weight="700">③ 动态高压追问生成</text>
+    <text x="643" y="370" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 针对漏洞发起尖锐反问</text>
+    <text x="643" y="390" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 要求第一性原理/量化数据支撑</text>
+    <text x="643" y="410" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 实时计算抗压心率与语速稳定性</text>
+    <text x="643" y="427" fill="#C084FC" font-family="system-ui, sans-serif" font-size="11">支持多轮高压交锋</text>
+
+    <!-- Arrow -->
+    <path d="M872 380 L900 380" stroke="#10B981" stroke-width="2"/>
+
+    <!-- Step 4 -->
+    <rect x="900" y="324" width="240" height="112" rx="8" fill="#0F172A" stroke="#10B981" stroke-width="1.2"/>
+    <text x="916" y="348" fill="#6EE7B7" font-family="system-ui, sans-serif" font-size="13" font-weight="700">④ 演说/面试尸检报告 (Autopsy)</text>
+    <text x="916" y="370" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 镇定度评分 (Composure Score)</text>
+    <text x="916" y="390" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 废话词/被打断时间点逐句标红</text>
+    <text x="916" y="410" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• $200K+ 高管级精炼回答重写对比</text>
+    <text x="916" y="427" fill="#34D399" font-family="system-ui, sans-serif" font-size="11">可导出复盘卡片</text>
+  </g>
+
+  <!-- Connector Arrows 2 -> 3 -->
+  <path d="M350 455 L350 485 M850 455 L850 485" stroke="#475569" stroke-width="2" stroke-dasharray="4 4"/>
+
+  <!-- Layer 3: Backend & Enterprise Gateway -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="485" width="1120" height="150" rx="12" fill="#1E293B" fill-opacity="0.7" stroke="#334155" stroke-width="1.5"/>
+    <rect x="40" y="485" width="8" height="150" rx="4" fill="url(#accentPurple)"/>
+    <text x="66" y="512" fill="#C084FC" font-family="system-ui, sans-serif" font-size="15" font-weight="700">03 双模驱动底座：浏览器端零成本直连 + 企业级 RTP 实时语音网关扩展 (Dual-Mode Voice Infrastructure)</text>
+
+    <!-- Left: Serverless Edge Mode -->
+    <rect x="66" y="528" width="515" height="90" rx="8" fill="#0F172A" stroke="#3B82F6" stroke-width="1.2"/>
+    <text x="86" y="552" fill="#60A5FA" font-family="system-ui, sans-serif" font-size="14" font-weight="700">⚡ 模式 A：轻量化边缘静态模式 (Public Live Demo)</text>
+    <text x="86" y="574" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 依托浏览器原生 SpeechRecognition + SpeechSynthesis + 本地确定性打断状态机</text>
+    <text x="86" y="594" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 零后端服务器成本、零 API Key 门槛，全球访客点开即练</text>
+
+    <!-- Right: Enterprise RTP Gateway Mode -->
+    <rect x="615" y="528" width="525" height="90" rx="8" fill="#0F172A" stroke="#8B5CF6" stroke-width="1.2"/>
+    <text x="635" y="552" fill="#C084FC" font-family="system-ui, sans-serif" font-size="14" font-weight="700">🏢 模式 B：企业级全双工语音网关底座 (voice-agent-rtp-gateway)</text>
+    <text x="635" y="574" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 对接 FreeSWITCH / WebRTC 8kHz~16kHz PCM 流 + SenseVoice 流式 ASR</text>
+    <text x="635" y="594" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• Python Pipecat 全双工流式管道 + DeepSeek/Qwen 实时推理 + 60ms 物理级打断</text>
+  </g>
+</svg>
