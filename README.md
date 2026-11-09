@@ -5,11 +5,12 @@
 **High-Pressure AI Voice Interviewer & Keynote Simulator with 52ms Barge-In**
 
 [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare_Pages-Deployed-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://hardcall.153557421.workers.dev)
+[![Zhihu](https://img.shields.io/badge/知乎-@王果ai_(1.2w+_关注)-0084FF?style=flat-square&logo=zhihu&logoColor=white)](https://www.zhihu.com/people/wang-guo-ha-53)
 [![Swift 6](https://img.shields.io/badge/Client-Swift_6_+_Speech-FA7343?style=flat-square&logo=swift&logoColor=white)](https://github.com/wangguode)
 [![Next.js 16](https://img.shields.io/badge/Web-Next.js_16_Static-000000?style=flat-square&logo=next.js&logoColor=white)](https://github.com/wangguode)
 [![License](https://img.shields.io/badge/License-Proprietary-blue?style=flat-square)](https://github.com/wangguode)
 
-[🌐 Live Web Demo](https://hardcall.153557421.workers.dev) · [📱 Mac App (.dmg)](https://github.com/wangguode) · [📖 Developer Profile](https://github.com/wangguode/wangguode)
+[🌐 Live Web Demo](https://hardcall.153557421.workers.dev) · [📖 知乎专栏 (@王果ai)](https://www.zhihu.com/people/wang-guo-ha-53) · [💻 Developer Profile](https://github.com/wangguode) · [🧠 AI Agent & Voice 知识库](https://github.com/wangguode/ai-agent-voice)
 
 </div>
 
