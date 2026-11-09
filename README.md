@@ -39,11 +39,13 @@
 
 > 架构遵循 AgentScope 2.0 工业级全景架构范式，涵盖左侧 WebRTC/AVAudioEngine 音频协议与多端实时语音舱、顶部 Cloudflare Edge 与环形音频缓冲区基础设施、中上部 4 大 LeetCode 式高压对抗题库与品牌核心、中央 52ms Barge-In 抢话截断状态机与尸检引擎、右侧打断核心与复盘工具链，以及底部运行时可观测体系。支持随 GitHub 主题自动在明亮/暗色模式间切换。
 
-### 界面实机预览 (Web & Desktop Studio)
+### 界面实机预览与 52ms 实时抢话打断演示 (Live Studio Demo)
 
 <p align="center">
-  <img src="./docs/assets/hardcall-preview.png" alt="HardCall Live Voice Studio Preview" width="100%" />
+  <img src="./docs/assets/hardcall-bargein-demo.gif" alt="HardCall 52ms Barge-In Live Demo" width="100%" />
 </p>
+
+> **动态演示流程**：选择高压题库 ➔ 拨号连线 ➔ 考官严厉发问 ➔ **考生出现口水套话瞬间触发 52ms 强行抢话打断并爆红告警** ➔ 提交硬核量化数据通过考核 ➔ 挂断通话生成 3 轴镇定度雷达图与弱句 vs $200K+ 高管重写对照。
 
 ---
 
