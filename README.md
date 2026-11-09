@@ -31,36 +31,13 @@
 ## 2. 全栈系统架构图（双端语音舱 + 52ms 实时打断状态机）
 
 <p align="center">
-  <img src="./docs/assets/hardcall-architecture.svg" alt="HardCall Full-Stack Architecture" width="100%" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/architecture-dark.svg">
+    <img alt="HardCall Full-Stack Architecture" src="./docs/assets/architecture-light.svg" width="100%">
+  </picture>
 </p>
 
-### 实时语音打断（Barge-In）与多端协同数据流
-
-```mermaid
-flowchart TB
-    subgraph Clients["多端实时语音交互层 (Multi-Platform Voice Clients)"]
-        WebClient["🌐 Web 实时语音工作台\n(Next.js 16 + Web Speech API + 60FPS 声波环)"]
-        AppleClient["🍎 Apple 原生客户端\n(Swift 6 + SwiftUI + AVAudioEngine + AirPods 免提)"]
-        DeckPicker["📚 LeetCode 式 4 大结构化题库选择器\n(行为面试 / 系统设计 / 薪资谈判 / 演说路演)"]
-    end
-
-    subgraph BargeInKernel["52ms 毫秒级实时打断与压力状态机内核 (Barge-In & Pressure Kernel)"]
-        StreamMonitor["① 实时语音流特征嗅探器\n(废话词 um/like/那个 · 量化指标缺失 · >15s 超时熔断)"]
-        StateMachine["② 全双工打断状态机\n(IDLE ➔ LISTENING ➔ BARGE_IN ➔ SPEAKING)"]
-        ClearAudio["③ 52ms 抢话截断控制器\n(挂起麦克风采集 + clearAudio 清空缓冲 + 零延迟切入)"]
-        AutopsyEngine["④ 通话后尸检复盘引擎 (Post-Call Autopsy)\n(镇定度雷达 · 废话标红 · $200K+ 高管级重写对比)"]
-    end
-
-    subgraph Infrastructure["双模驱动底座 (Dual-Mode Voice Infrastructure)"]
-        EdgeMode["⚡ 模式 A：轻量化边缘零成本直连\n(Cloudflare Workers 静态部署 · 浏览器原生语音引擎)"]
-        EnterpriseGateway["🏢 模式 B：企业级 RTP 语音网关底座 (voice-agent-rtp-gateway)\n(FreeSWITCH 8kHz RTP + Pipecat 全双工管道 + SenseVoice 60ms 打断)"]
-    end
-
-    DeckPicker --> WebClient & AppleClient
-    WebClient & AppleClient --> StreamMonitor
-    StreamMonitor --> StateMachine --> ClearAudio --> AutopsyEngine
-    StateMachine -.-> EdgeMode & EnterpriseGateway
-```
+> 架构遵循 AgentScope 2.0 工业级全景架构范式，涵盖左侧 WebRTC/AVAudioEngine 音频协议与多端实时语音舱、顶部 Cloudflare Edge 与环形音频缓冲区基础设施、中上部 4 大 LeetCode 式高压对抗题库与品牌核心、中央 52ms Barge-In 抢话截断状态机与尸检引擎、右侧打断核心与复盘工具链，以及底部运行时可观测体系。支持随 GitHub 主题自动在明亮/暗色模式间切换。
 
 ### 界面实机预览 (Web & Desktop Studio)
 
