@@ -1,34 +1,34 @@
 <div align="center">
 
-# 🎙️ HardCall // 52ms 毫秒级实时打断 AI 高压语音面试与演说路演模拟器
-### (ChatGPT Is Polite. Real Interviewers Interrupt — High-Pressure AI Voice Simulator)
+# 🎙️ HardCall // 52ms Barge-In High-Pressure AI Voice Simulator
+### ChatGPT Is Polite. Real Interviewers Interrupt — Full-Duplex Voice Cockpit & Stress Testbed
 
-[![Cloudflare Pages](https://img.shields.io/badge/Live_Demo-Cloudflare_Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://hardcall.153557421.workers.dev)
-[![Zhihu](https://img.shields.io/badge/知乎-@王果ai_(1.2w+_关注)-0084FF?style=flat-square&logo=zhihu&logoColor=white)](https://www.zhihu.com/people/wang-guo-ha-53)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Cloudflare_Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://hardcall.153557421.workers.dev)
 [![Swift 6](https://img.shields.io/badge/Native_Client-Swift_6_+_Speech-FA7343?style=flat-square&logo=swift&logoColor=white)](https://github.com/wangguode/hardcall)
 [![Next.js 16](https://img.shields.io/badge/Web_Studio-Next.js_16_Static-000000?style=flat-square&logo=next.js&logoColor=white)](https://hardcall.153557421.workers.dev)
-[![Barge-In](https://img.shields.io/badge/Barge--In_Latency-52ms-EF4444?style=flat-square)](https://github.com/wangguode/ai-agent-voice)
+[![Barge-In](https://img.shields.io/badge/Barge--In_Latency-52ms-EF4444?style=flat-square)](https://github.com/wangguode/hardcall)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](./LICENSE)
 
-[🌐 在线体验 (Live Web Demo)](https://hardcall.153557421.workers.dev) · [📖 知乎专栏 (@王果ai)](https://www.zhihu.com/people/wang-guo-ha-53) · [🧠 AI Agent 与语音工程知识库](https://github.com/wangguode/ai-agent-voice) · [🧩 知枢智能体 (Zhishu Agent)](https://github.com/wangguode/zhishu-agent)
+**🇺🇸 English** | [🇨🇳 简体中文](./README.zh-CN.md) · [🌐 Live Web Demo](https://hardcall.153557421.workers.dev) · [📖 Architecture Deep-Dive (DEV.to)](https://dev.to/wangguode/breaking-the-200ms-voice-barrier-anatomy-of-a-52ms-ai-interruption-loop-50p0) · [🧩 Zhishu Agent](https://github.com/wangguode/zhishu-agent)
 
 </div>
 
 ---
 
-## 1. 为什么做这个项目？（核心痛点破局）
+## 1. Why HardCall?
 
-市面上普通的 AI 聊天机器人（如默认模式下的 ChatGPT）**过于礼貌**——当你用大量的口头禅（`um`、`like`、`那个`、`然后`）啰嗦铺垫 3 分钟却没有任何量化指标时，它依然会耐心地听完并夸奖你。
+Standard voice AI assistants (like ChatGPT Voice) are **too polite**. You can ramble with filler words (`um`, `like`, `uh`) for three minutes without giving a single metric, and the bot will patiently wait until you finish and compliment your answer.
 
-但在真实的**大厂终面（FAANG Behavioral / System Design）**、**高管晋升答辩**或 **YC 投资人路演（Pitch）**中，只要你在前 12~15 秒内没有切入核心结论或缺乏数据支撑，考官和投资人会**毫不留情地直接开口打断你（Barge-In）**。
+In real **FAANG Behavioral / System Design interviews**, **executive promotion reviews**, or **YC investor pitches**, if you fail to state your core thesis or metrics within the first 12–15 seconds, the interviewer **cuts you off mid-sentence (Barge-In)**.
 
-**HardCall** 专为“高压实时语音对抗”而生：
-- **52ms 毫秒级实时抢话打断**：实时监测你的语音流与增量文本，一旦检测到口水话、逻辑发散或缺乏量化数据，立即在句中强行打断并发起尖锐追问。
-- **双端同源架构（Web 在线舱 + Apple 原生客户端）**：既支持零门槛浏览器麦克风直连体验，又提供基于 `Swift 6 + AVAudioEngine + SFSpeechRecognizer` 的 macOS/iOS 原生客户端（支持 AirPods 免提对抗）。
-- **LeetCode 式结构化题库**：内置大厂行为面试、高并发系统设计答辩、薪资谈判破局、演说与路演 4 大专项训练场。
+**HardCall** is engineered for high-pressure, full-duplex adversarial voice simulation:
+- **52ms End-to-End Barge-In SLA**: Decouples acoustic interruption from slow cloud STT round-trips. Runs local frame-level VAD over a 256-frame circular buffer and executes a 0.16ms Web Audio hardware buffer flush (`gain.setValueAtTime(0)` + source teardown) to eliminate trailing audio overlap.
+- **Dual-Client Architecture (Web Studio + Native macOS/iOS)**: Instant zero-key browser microphone mode, plus a native `Swift 6 + AVAudioEngine + SFSpeechRecognizer` Apple client (AirPods hands-free ready).
+- **LeetCode-Style Adversarial Drills**: Structured tracks for FAANG Behavioral, 80K QPS System Design Defense, Salary Negotiation, and YC 120s Keynote Pitching.
 
 ---
 
-## 2. 全栈系统架构图（双端语音舱 + 52ms 实时打断状态机）
+## 2. Full-Stack Architecture (Dual-Client Cockpit + 52ms Barge-In State Machine)
 
 <p align="center">
   <picture>
@@ -37,43 +37,48 @@
   </picture>
 </p>
 
-> 架构遵循 AgentScope 2.0 工业级全景架构范式，涵盖左侧 WebRTC/AVAudioEngine 音频协议与多端实时语音舱、顶部 Cloudflare Edge 与环形音频缓冲区基础设施、中上部 4 大 LeetCode 式高压对抗题库与品牌核心、中央 52ms Barge-In 抢话截断状态机与尸检引擎、右侧打断核心与复盘工具链，以及底部运行时可观测体系。支持随 GitHub 主题自动在明亮/暗色模式间切换。
-
-### 界面实机预览与 52ms 实时抢话打断演示 (Live Studio Demo)
+### Live Studio & 52ms Barge-In Demo
 
 <p align="center">
   <img src="./docs/assets/hardcall-bargein-demo.gif" alt="HardCall 52ms Barge-In Live Demo" width="100%" />
 </p>
 
-> **动态演示流程**：选择高压题库 ➔ 拨号连线 ➔ 考官严厉发问 ➔ **考生出现口水套话瞬间触发 52ms 强行抢话打断并爆红告警** ➔ 提交硬核量化数据通过考核 ➔ 挂断通话生成 3 轴镇定度雷达图与弱句 vs $200K+ 高管重写对照。
+> **Demo Flow**: Select drill track ➔ Connect call ➔ Interviewer asks sharp prompt ➔ **Filler words / rambling immediately trigger a 52ms red-alert barge-in interruption** ➔ Provide hard metrics to pass ➔ Hang up for a 3-axis composure radar & weak-sentence vs. $200K+ executive rewrite autopsy.
 
 ---
 
-## 3. LeetCode 式 4 大结构化高压训练题库
+## 3. Four Structured High-Pressure Drill Tracks
 
-| 题库分类 | 典型高压场景题目 | 考官打断触发条件 (Barge-In Triggers) |
+| Track | Sample High-Pressure Scenarios | Barge-In Trigger Conditions |
 | :--- | :--- | :--- |
-| **01. 大厂行为面试**<br>*(FAANG Behavioral)* | • 生产环境 P0 级故障复盘与个人决策<br>• 与资深 Tech Lead 发生架构分歧时的推进 | 铺垫背景超过 15 秒未进入行动点、使用模糊词（“我们团队大概做了…”）、缺乏故障恢复时长（MTTR）量化指标 |
-| **02. 系统设计答辩**<br>*(System Design Defense)* | • 80,000 QPS 支付网关幂等性与防重设计<br>• 第三方 Webhook 瞬时丢包与背压削峰 | 只背诵通用八股文（“加个 Redis 缓存”）、未说明分布式锁过期与脑裂边界、未给出延迟 P99 数字 |
-| **03. 薪资与职级谈判**<br>*(Salary Negotiation)* | • 突破 $160K 薪资上限的筹码博弈<br>• 无競对 Offer 时的股票/签字费谈判 | 语气犹豫道歉（`I was hoping maybe...`）、自降底牌、用个人生活成本代替商业产出价值 |
-| **04. 演说与路演训练**<br>*(Keynote & Pitch Drills)* | • YC Demo Day 120 秒极速电梯路演<br>• 面向 CTO 的季度核心架构演进汇报 | 前 10 秒未讲清产品一句话定位、滥用未定义的行话缩写、缺乏核心增长率或成本下降百分比 |
+| **01. FAANG Behavioral** | • Production P0 outage postmortem & ownership<br>• Resolving architecture deadlocks with a Staff/Principal Lead | Rambling >15s without action items, vague pronouns ("we kind of..."), missing MTTR metrics |
+| **02. System Design Defense** | • 80,000 QPS payment gateway idempotency<br>• Webhook burst packet loss & backpressure shedding | Generic textbook buzzwords ("just add Redis"), ignoring distributed lock TTL / split-brain, missing P99 latency numbers |
+| **03. Salary Negotiation** | • Breaking through a $160K base cap<br>• Negotiating equity / sign-on without a competing offer | Apologetic hedging (`I was hoping maybe...`), anchoring low, citing personal expenses instead of business impact |
+| **04. Keynote & Pitch Drills** | • YC Demo Day 120s elevator pitch<br>• Quarterly core architecture review to CTO | Failing to define the product in the first 10s, undefined jargon, missing growth or cost-reduction percentages |
 
 ---
 
-## 4. 快速启动与部署指南 (Quick Start & Deployment)
+## 4. Quick Start & Deployment
 
-### 本地运行 Web 语音工作台
+### Run the Web Studio Locally
 
 ```bash
 cd web
 npm install
 npm run dev
 ```
-浏览器打开 `http://localhost:3000` 即可直接使用麦克风或文本模拟模式进行高压对练。
 
-### Cloudflare Workers / Pages 部署配置
+Open `http://localhost:3000` in your browser to test immediately in live microphone or text-simulation mode (zero API keys required).
 
-仓库已内置 `wrangler.json` 与静态导出配置（`output: 'export'`）：
+### Cloudflare Workers / Pages Deployment
+
+Pre-configured with `wrangler.json` and static export (`output: 'export'`):
 - **Build command**: `npm run build`
 - **Build output directory**: `out`
 - **Node.js version**: `20+`
+
+---
+
+## License
+
+[MIT](./LICENSE) © 2026 Wang Guo (`wangguode`)
