@@ -63,7 +63,6 @@ In real **FAANG Behavioral / System Design interviews**, **executive promotion r
 ### Run the Web Studio Locally
 
 ```bash
-cd web
 npm install
 npm run dev
 ```

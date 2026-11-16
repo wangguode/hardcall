@@ -65,7 +65,6 @@
 ### 本地运行 Web 语音工作台
 
 ```bash
-cd web
 npm install
 npm run dev
 ```
