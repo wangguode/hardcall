@@ -1,10 +1,18 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "hardcall",
+  "main": "worker.ts",
   "compatibility_date": "2024-11-01",
   "assets": {
-    "directory": "./out"
+    "directory": "./out",
+    "binding": "ASSETS"
   },
+  "routes": [
+    {
+      "pattern": "hardcall.statementflow.win/*",
+      "zone_name": "statementflow.win"
+    }
+  ],
   "build": {
     "command": "npm run build"
   }

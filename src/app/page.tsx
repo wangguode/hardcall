@@ -200,6 +200,8 @@ export default function HomePage() {
   const [checkoutPlan, setCheckoutPlan] = useState<"weekly" | "lifetime">("weekly");
   const [promoCode, setPromoCode] = useState("");
   const [promoMessage, setPromoMessage] = useState("");
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
 
   // Real-time Mic Recording State (Web Speech API)
   const [isRecording, setIsRecording] = useState(false);
@@ -370,6 +372,35 @@ export default function HomePage() {
       setPromoMessage(isEn ? "VIP Pass Activated (Local Sandbox)" : "VIP 通行码已在本地沙盒激活成功！");
     } else {
       setPromoMessage(isEn ? "Invalid code. Format: HC-OFFER-2026" : "无效兑换码。示例格式：HC-OFFER-2026");
+    }
+  };
+
+  const handleCreemCheckout = async () => {
+    setCheckoutLoading(true);
+    setCheckoutError("");
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: checkoutPlan }),
+      });
+      if (!res.ok) throw new Error("Checkout init failed");
+      const data = (await res.json()) as { mode?: string; checkoutUrl?: string };
+      if (data.mode === "live_redirect" && data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+      setPromoMessage(
+        isEn
+          ? "Sandbox Pass Activated (Creem keys pending)"
+          : "沙盒通行证已激活（待填入 Creem 实时密钥）"
+      );
+    } catch {
+      setCheckoutError(
+        isEn ? "Unable to initialize Creem checkout. Please retry." : "初始化 Creem 结账失败，请重试。"
+      );
+    } finally {
+      setCheckoutLoading(false);
     }
   };
 
@@ -1212,8 +1243,8 @@ export default function HomePage() {
 
             <p className="text-xs text-[#a1a1a6]">
               {isEn
-                ? "This simulates the native StoreKit 2 in-app checkout modal on macOS & iOS. Payments are processed securely via Apple."
-                : "此弹窗演示原生 macOS & iOS 上的 StoreKit 2 苹果官方内购流程，款项由苹果自动结算。"}
+                ? "Checkout is processed securely via Creem.io (Global Merchant of Record — Credit Card, Apple Pay & EU/UK VAT handled automatically)."
+                : "通过 Creem.io 全球名义商户安全结账（自动处理全球信用卡、Apple Pay 与海外税费）。"}
             </p>
 
             <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
@@ -1257,19 +1288,38 @@ export default function HomePage() {
             </div>
 
             <div className="space-y-2 pt-2">
-              <a
-                href="/Users/wangguo/Downloads/HardCall-AppStore.dmg"
-                download
-                className="w-full py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs text-center block"
+              {checkoutError && (
+                <div className="text-xs font-mono text-red-400">{checkoutError}</div>
+              )}
+              <button
+                type="button"
+                disabled={checkoutLoading}
+                onClick={handleCreemCheckout}
+                className="w-full py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-black font-bold text-xs text-center block cursor-pointer"
               >
-                {isEn ? "Download macOS App (.dmg)" : "直接下载体验 macOS App (.dmg)"}
+                {checkoutLoading
+                  ? isEn
+                    ? "Redirecting to Creem.io..."
+                    : "正在跳转 Creem.io 安全收银台..."
+                  : isEn
+                  ? `Pay ${checkoutPlan === "weekly" ? "$6.99/wk" : "$49.99"} via Creem.io`
+                  : `通过 Creem.io 立即购买 (${checkoutPlan === "weekly" ? "$6.99/周" : "$49.99 买断"})`}
+              </button>
+              <a
+                href="https://github.com/wangguode/hardcall"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium text-xs text-center block"
+              >
+                {isEn ? "View Open-Source macOS App on GitHub" : "前往 GitHub 获取 macOS 开源客户端"}
               </a>
               <button
                 onClick={() => {
                   setShowCheckoutModal(false);
                   setPromoMessage("");
+                  setCheckoutError("");
                 }}
-                className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium text-xs text-center block"
+                className="w-full py-2 rounded-full bg-transparent hover:bg-white/5 text-[#a1a1a6] font-medium text-xs text-center block"
               >
                 {isEn ? "Close" : "关闭"}
               </button>
