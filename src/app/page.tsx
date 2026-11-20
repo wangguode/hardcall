@@ -202,6 +202,46 @@ export default function HomePage() {
   const [promoMessage, setPromoMessage] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  const [verifiedNotice, setVerifiedNotice] = useState("");
+
+  // Creem 支付成功回跳时，向服务端 /api/verify-checkout 核验订单后再持久解锁
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = localStorage.getItem("hardcall_license_active");
+    if (saved) {
+      setVerifiedNotice(
+        isEn
+          ? "HardCall Pro License Active (Verified via Creem.io)"
+          : "HardCall 专业版已激活（Creem 订单验证通过）"
+      );
+    }
+    const params = new URLSearchParams(window.location.search);
+    const checkoutId = params.get("checkout_id");
+    if (params.get("checkout") !== "success" || !checkoutId) return;
+
+    fetch(`/api/verify-checkout?checkout_id=${encodeURIComponent(checkoutId)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { verified?: boolean; plan?: string } | null) => {
+        if (data?.verified) {
+          localStorage.setItem("hardcall_license_active", checkoutId);
+          setVerifiedNotice(
+            isEn
+              ? "Payment verified via Creem.io — HardCall full access unlocked!"
+              : "Creem 支付核验成功 — HardCall 完整权限已永久解锁！"
+          );
+          params.delete("checkout");
+          params.delete("checkout_id");
+          params.delete("plan");
+          const qs = params.toString();
+          window.history.replaceState(
+            {},
+            "",
+            qs ? `${window.location.pathname}?${qs}` : window.location.pathname
+          );
+        }
+      })
+      .catch(() => {});
+  }, [isEn]);
 
   // Real-time Mic Recording State (Web Speech API)
   const [isRecording, setIsRecording] = useState(false);
@@ -1174,6 +1214,39 @@ export default function HomePage() {
                 {isEn ? "Buy Lifetime Pass ($49.99)" : "一次性买断 ($49.99)"}
               </button>
             </div>
+          </div>
+
+          {verifiedNotice && (
+            <div className="mt-8 p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-mono text-center">
+              ✓ {verifiedNotice}
+            </div>
+          )}
+
+          {/* B2B 高客单价：企业语音网关与私有化部署入口 */}
+          <div className="mt-10 p-6 sm:p-8 rounded-3xl bg-[#12141a] border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-xl">
+              <div className="text-xs font-mono font-bold text-emerald-400 uppercase">
+                {isEn
+                  ? "ENTERPRISE SELF-HOSTED · STARTING AT $3,000"
+                  : "企业私有化与语音网关定制 · $3,000 起"}
+              </div>
+              <h3 className="text-lg font-bold text-white">
+                {isEn
+                  ? "Deploy 52ms Full-Duplex Voice AI inside your own FreeSWITCH / SIP infrastructure"
+                  : "需要为您企业的客服/培训系统私有化部署 52ms 全双工语音网关？"}
+              </h3>
+              <p className="text-xs text-[#a1a1a6] leading-relaxed">
+                {isEn
+                  ? "Includes raw 8kHz RTP/SIP barge-in loop, SOXR VHQ resampling, custom evaluation rubrics, and dedicated engineering integration."
+                  : "包含原始 8kHz RTP/SIP 语音打断闭环、SOXR VHQ 无损重采样、定制评估模型与工程师一对一联调交付。"}
+              </p>
+            </div>
+            <a
+              href="mailto:17768113090@163.com?subject=HardCall%20Enterprise%20Voice%20Gateway%20Inquiry"
+              className="shrink-0 px-6 py-3 rounded-full bg-white text-black font-bold text-xs hover:bg-[#e5e5ea] transition-colors"
+            >
+              {isEn ? "Request Enterprise Quote" : "咨询企业私有化报价"}
+            </a>
           </div>
         </div>
       </section>
