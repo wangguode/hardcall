@@ -1207,10 +1207,11 @@ export default function HomePage() {
 
           <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>Copyright © 2026 Wang Guo (17768113090@163.com). All rights reserved.</div>
-            <div className="flex gap-4">
-              <a href="#compliance" className="hover:text-white">Privacy Policy</a>
-              <a href="#compliance" className="hover:text-white">Terms of Use (EULA)</a>
-              <a href="mailto:17768113090@163.com" className="hover:text-white">Support</a>
+            <div className="flex flex-wrap gap-4">
+              <a href="/privacy" className="hover:text-white underline">Privacy Policy</a>
+              <a href="/terms" className="hover:text-white underline">Terms of Use</a>
+              <a href="/terms#acceptable-use" className="hover:text-white underline">Acceptable Use Policy</a>
+              <a href="mailto:zhangsanx34@gmail.com" className="hover:text-white">Support</a>
             </div>
           </div>
         </div>
