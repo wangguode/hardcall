@@ -538,11 +538,11 @@ export default function HomePage() {
 
           <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
             <a
-              href="#pricing"
+              href="#enterprise-b2b"
               className="px-6 py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"
             >
-              <Apple className="w-4 h-4 fill-current" />
-              <span>{isEn ? "Get on App Store ($6.99/wk)" : "App Store 获取 ($6.99/周起)"}</span>
+              <Server className="w-4 h-4" />
+              <span>{isEn ? "Enterprise Voice Gateway ($3,000+)" : "企业私有化语音网关定制 ($3,000+)"}</span>
             </a>
 
             <a
@@ -550,14 +550,14 @@ export default function HomePage() {
               className="px-6 py-3 rounded-full border border-white/20 hover:border-white/40 text-white font-medium text-sm flex items-center gap-2 transition-colors"
             >
               <Mic className="w-4 h-4 text-emerald-400" />
-              <span>{isEn ? "Try Voice Mic Simulator" : "在线体验麦克风语音对练"}</span>
+              <span>{isEn ? "Try Free Browser Barge-In Simulator" : "免费体验浏览器端打断模拟器"}</span>
             </a>
           </div>
 
           <div className="pt-2 flex flex-wrap items-center justify-center gap-6 text-xs text-[#86868b] font-mono">
-            <span>✓ Hands-Free AirPods Mic Support</span>
-            <span>✓ Structured LeetCode-Style Question Bank</span>
-            <span>✓ Pitch & Presentation Filler Radar</span>
+            <span>✓ Interactive Browser Simulator (Zero API Key)</span>
+            <span>✓ Production 8kHz RTP / FreeSWITCH B2B Architecture</span>
+            <span>✓ Open-Source Swift 6 + Next.js Reference</span>
           </div>
         </div>
       </section>
@@ -1223,7 +1223,7 @@ export default function HomePage() {
           )}
 
           {/* B2B 高客单价：企业语音网关与私有化部署入口 */}
-          <div className="mt-10 p-6 sm:p-8 rounded-3xl bg-[#12141a] border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div id="enterprise-b2b" className="mt-10 p-6 sm:p-8 rounded-3xl bg-[#12141a] border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div className="space-y-2 max-w-xl">
               <div className="text-xs font-mono font-bold text-emerald-400 uppercase">
                 {isEn

@@ -3,15 +3,19 @@
 # 🎙️ HardCall // 52ms Barge-In High-Pressure AI Voice Simulator
 ### ChatGPT Is Polite. Real Interviewers Interrupt — Full-Duplex Voice Cockpit & Stress Testbed
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-Cloudflare_Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://hardcall.153557421.workers.dev)
+[![Live Demo](https://img.shields.io/badge/Live_Simulator-hardcall.statementflow.win-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://hardcall.statementflow.win)
 [![Swift 6](https://img.shields.io/badge/Native_Client-Swift_6_+_Speech-FA7343?style=flat-square&logo=swift&logoColor=white)](https://github.com/wangguode/hardcall)
-[![Next.js 16](https://img.shields.io/badge/Web_Studio-Next.js_16_Static-000000?style=flat-square&logo=next.js&logoColor=white)](https://hardcall.153557421.workers.dev)
-[![Barge-In](https://img.shields.io/badge/Barge--In_Latency-52ms-EF4444?style=flat-square)](https://github.com/wangguode/hardcall)
+[![B2B RTP Lab](https://img.shields.io/badge/Telephony_8kHz_RTP-ai--agent--voice-10B981?style=flat-square)](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein)
+[![Barge-In](https://img.shields.io/badge/Barge--In_Target-52ms-EF4444?style=flat-square)](https://github.com/wangguode/hardcall)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](./LICENSE)
 
-**🇺🇸 English** | [🇨🇳 简体中文](./README.zh-CN.md) · [🌐 Live Web Demo](https://hardcall.153557421.workers.dev) · [📖 Architecture Deep-Dive (DEV.to)](https://dev.to/wangguode/breaking-the-200ms-voice-barrier-anatomy-of-a-52ms-ai-interruption-loop-50p0) · [🧩 Zhishu Agent](https://github.com/wangguode/zhishu-agent)
+**🇺🇸 English** | [🇨🇳 简体中文](./README.zh-CN.md) · [🌐 Live Barge-In Simulator](https://hardcall.statementflow.win) · [☎️ 8kHz RTP Telephony Lab](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein) · [📖 Architecture Deep-Dive (DEV.to)](https://dev.to/wangguode/why-turn-based-voice-ai-feels-broken-building-a-52ms-barge-in-loop-hardcall-9pc)
 
 </div>
+
+> **Architecture Note (Transparent Scope)**:
+> - **Web Studio (`hardcall.statementflow.win`)**: Free browser-based interactive barge-in & cadence simulator (uses Web Speech API + structured adversarial scripts, zero API keys required) so teams can feel interruption mechanics instantly.
+> - **Production Telephony / Enterprise B2B (`$3,000+` Self-Hosted Deployment)**: Full 8kHz raw RTP + FreeSWITCH + SOXR VHQ resampling + 256-frame outbound ring buffer (`0.16ms` hardware flush) engine lives in [ai-agent-voice/01-voice-agent-rtp-bargein](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein). Contact `153557421@qq.com` for enterprise voice gateway integration.
 
 ---
 
