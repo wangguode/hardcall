@@ -1222,31 +1222,130 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* B2B 高客单价：企业语音网关与私有化部署入口 */}
-          <div id="enterprise-b2b" className="mt-10 p-6 sm:p-8 rounded-3xl bg-[#12141a] border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-xl">
-              <div className="text-xs font-mono font-bold text-emerald-400 uppercase">
-                {isEn
-                  ? "ENTERPRISE SELF-HOSTED · STARTING AT $3,000"
-                  : "企业私有化与语音网关定制 · $3,000 起"}
+          {/* B2B 实机性能对比基准 + 务实三阶企业语音网关交付清单 */}
+          <div id="enterprise-b2b" className="mt-12 p-6 sm:p-8 rounded-3xl bg-[#12141a] border border-white/10 space-y-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-2 max-w-2xl">
+                <div className="text-xs font-mono font-bold text-emerald-400 uppercase">
+                  {isEn
+                    ? "B2B TELEPHONY & VOICE AI ARCHITECTURE · PILOT FROM $299"
+                    : "B2B 电信级全双工语音网关方案 · $299 压测破冰起步"}
+                </div>
+                <h3 className="text-xl font-bold text-white">
+                  {isEn
+                    ? "Raw 8kHz RTP / FreeSWITCH 60ms Barge-In vs. Standard WebSocket Pipelines"
+                    : "原始 8kHz RTP / FreeSWITCH 60ms 硬件级打断 vs 普通 WebSocket 方案"}
+                </h3>
+                <p className="text-xs text-[#a1a1a6] leading-relaxed">
+                  {isEn
+                    ? "Engineered for AI call centers, outbound voice agents, and telephony startups struggling with 900ms+ barge-in lag, TCP head-of-line blocking, and 8kHz PSTN resampling distortion."
+                    : "专为 AI 电话客服、外呼销售与语音创业团队打造，彻底解决电话线路下 900ms+ 插话停不下来、TCP 队头阻塞与 8kHz 采样失真痛点。"}
+                </p>
               </div>
-              <h3 className="text-lg font-bold text-white">
-                {isEn
-                  ? "Deploy 52ms Full-Duplex Voice AI inside your own FreeSWITCH / SIP infrastructure"
-                  : "需要为您企业的客服/培训系统私有化部署 52ms 全双工语音网关？"}
-              </h3>
-              <p className="text-xs text-[#a1a1a6] leading-relaxed">
-                {isEn
-                  ? "Includes raw 8kHz RTP/SIP barge-in loop, SOXR VHQ resampling, custom evaluation rubrics, and dedicated engineering integration."
-                  : "包含原始 8kHz RTP/SIP 语音打断闭环、SOXR VHQ 无损重采样、定制评估模型与工程师一对一联调交付。"}
-              </p>
+              <a
+                href="https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein"
+                target="_blank"
+                rel="noreferrer"
+                className="shrink-0 px-4 py-2 rounded-full border border-emerald-400/40 text-emerald-300 font-mono text-xs hover:bg-emerald-500/10 transition-colors"
+              >
+                {isEn ? "Inspect Open-Source RTP Lab →" : "查看开源 8kHz RTP 实验室 →"}
+              </a>
             </div>
-            <a
-              href="mailto:17768113090@163.com?subject=HardCall%20Enterprise%20Voice%20Gateway%20Inquiry"
-              className="shrink-0 px-6 py-3 rounded-full bg-white text-black font-bold text-xs hover:bg-[#e5e5ea] transition-colors"
-            >
-              {isEn ? "Request Enterprise Quote" : "咨询企业私有化报价"}
-            </a>
+
+            {/* 实机延迟对比基准表 */}
+            <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0a0c10]">
+              <table className="w-full text-left text-xs font-mono">
+                <thead className="border-b border-white/10 text-[#86868b]">
+                  <tr>
+                    <th className="py-3 px-4">{isEn ? "Benchmark Dimension" : "核心工程维度"}</th>
+                    <th className="py-3 px-4">{isEn ? "Standard WebSocket Wrapper" : "常规 WebSocket 封装"}</th>
+                    <th className="py-3 px-4 text-emerald-400">{isEn ? "HardCall / 8kHz RTP Engine" : "HardCall / 8kHz RTP 引擎"}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-[#d1d1d6]">
+                  <tr>
+                    <td className="py-2.5 px-4 text-white">{isEn ? "End-to-End Barge-In Latency" : "端到端插话打断延迟"}</td>
+                    <td className="py-2.5 px-4 text-red-400">850ms – 1,400ms</td>
+                    <td className="py-2.5 px-4 text-emerald-400 font-bold">52ms – 60ms (Fast-Loop VAD)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4 text-white">{isEn ? "Audio Buffer Flush (Tail Cut)" : "出站缓冲区尾音硬清"}</td>
+                    <td className="py-2.5 px-4">300ms+ trailing overlap</td>
+                    <td className="py-2.5 px-4 text-emerald-400 font-bold">0.16ms (256-frame ring teardown)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4 text-white">{isEn ? "PSTN 8kHz → 16kHz Resampling" : "8kHz 电话重采样保真"}</td>
+                    <td className="py-2.5 px-4">Linear aliasing / STT drops</td>
+                    <td className="py-2.5 px-4 text-emerald-400 font-bold">SOXR VHQ lossless pipeline</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4 text-white">{isEn ? "Packet Loss & Jitter Handling" : "弱网抖动与队头阻塞"}</td>
+                    <td className="py-2.5 px-4">TCP head-of-line stalls</td>
+                    <td className="py-2.5 px-4 text-emerald-400 font-bold">Raw UDP/RTP jitter buffer</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* 三档务实 B2B 阶梯报价与交付清单 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-5 rounded-2xl bg-[#0a0c10] border border-white/10 flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <div className="text-[11px] font-mono text-emerald-400 uppercase">Step 1 · Low-Risk Pilot</div>
+                  <div className="text-lg font-bold text-white">$299 <span className="text-xs font-normal text-[#86868b]">one-time</span></div>
+                  <div className="text-xs font-semibold text-white">{isEn ? "Voice Latency Audit & Benchmark" : "语音打断延迟体检与压测报告"}</div>
+                  <ul className="text-[11px] text-[#a1a1a6] space-y-1.5 pt-1">
+                    <li>• Profile your live SIP/WebRTC barge-in path</li>
+                    <li>• Frame-level jitter & tail-overlap report</li>
+                    <li>• Actionable patch plan (48h delivery)</li>
+                  </ul>
+                </div>
+                <a
+                  href="mailto:153557421@qq.com?subject=HardCall%20%24299%20Voice%20Latency%20Audit%20Pilot"
+                  className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-center font-semibold text-xs transition-colors"
+                >
+                  {isEn ? "Book $299 Latency Audit" : "预约 $299 架构体检"}
+                </a>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-[#0a0c10] border border-emerald-500/40 flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <div className="text-[11px] font-mono text-emerald-400 uppercase">Step 2 · Self-Hosted Kit</div>
+                  <div className="text-lg font-bold text-white">$1,200 <span className="text-xs font-normal text-[#86868b]">license</span></div>
+                  <div className="text-xs font-semibold text-white">{isEn ? "8kHz RTP Gateway Deployment Pack" : "8kHz RTP 网关源码与部署包"}</div>
+                  <ul className="text-[11px] text-[#a1a1a6] space-y-1.5 pt-1">
+                    <li>• Production FreeSWITCH + SOXR VHQ docker stack</li>
+                    <li>• 256-frame outbound ring buffer & 0.16ms flush</li>
+                    <li>• Commercial license + 2h onboarding call</li>
+                  </ul>
+                </div>
+                <a
+                  href="mailto:153557421@qq.com?subject=HardCall%20%241200%20RTP%20Deployment%20Kit"
+                  className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-center font-bold text-xs transition-colors"
+                >
+                  {isEn ? "Get $1,200 Deployment Kit" : "获取 $1,200 私有化部署包"}
+                </a>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-[#0a0c10] border border-white/10 flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <div className="text-[11px] font-mono text-[#a1a1a6] uppercase">Step 3 · Enterprise Custom</div>
+                  <div className="text-lg font-bold text-white">$3,000+ <span className="text-xs font-normal text-[#86868b]">custom</span></div>
+                  <div className="text-xs font-semibold text-white">{isEn ? "Dedicated SIP / Telephony Integration" : "企业定制 SIP / 电话集群集成"}</div>
+                  <ul className="text-[11px] text-[#a1a1a6] space-y-1.5 pt-1">
+                    <li>• Custom integration with your LLM/STT/TTS stack</li>
+                    <li>• High-concurrency load testing & SLA tuning</li>
+                    <li>• 30-day dedicated architect support</li>
+                  </ul>
+                </div>
+                <a
+                  href="mailto:153557421@qq.com?subject=HardCall%20Enterprise%20Custom%20Voice%20Gateway"
+                  className="w-full py-2.5 rounded-xl bg-white text-black hover:bg-[#e5e5ea] text-center font-bold text-xs transition-colors"
+                >
+                  {isEn ? "Request Enterprise Quote" : "咨询企业定制交付"}
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
