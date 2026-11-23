@@ -1,21 +1,24 @@
 <div align="center">
 
-# 🎙️ HardCall // 52ms Barge-In High-Pressure AI Voice Simulator
-### ChatGPT Is Polite. Real Interviewers Interrupt — Full-Duplex Voice Cockpit & Stress Testbed
+# 🎙️ HardCall // 60ms 8kHz RTP Voice Barge-In Gateway & Open-Source Simulator
+### Sub-60ms PSTN/SIP Telephony Interruption Architecture vs. 900ms+ WebSocket Lag
 
 [![Live Demo](https://img.shields.io/badge/Live_Simulator-hardcall.statementflow.win-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://hardcall.statementflow.win)
-[![Swift 6](https://img.shields.io/badge/Native_Client-Swift_6_+_Speech-FA7343?style=flat-square&logo=swift&logoColor=white)](https://github.com/wangguode/hardcall)
 [![B2B RTP Lab](https://img.shields.io/badge/Telephony_8kHz_RTP-ai--agent--voice-10B981?style=flat-square)](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein)
-[![Barge-In](https://img.shields.io/badge/Barge--In_Target-52ms-EF4444?style=flat-square)](https://github.com/wangguode/hardcall)
+[![Barge-In](https://img.shields.io/badge/RTP_Barge--In_Cutoff-<60ms-EF4444?style=flat-square)](https://hardcall.statementflow.win#enterprise-b2b)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](./LICENSE)
 
 **🇺🇸 English** | [🇨🇳 简体中文](./README.zh-CN.md) · [🌐 Live Barge-In Simulator](https://hardcall.statementflow.win) · [☎️ 8kHz RTP Telephony Lab](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein) · [📖 Architecture Deep-Dive (DEV.to)](https://dev.to/wangguode/why-turn-based-voice-ai-feels-broken-building-a-52ms-barge-in-loop-hardcall-9pc)
 
 </div>
 
-> **Architecture Note (Transparent Scope)**:
-> - **Web Studio (`hardcall.statementflow.win`)**: Free browser-based interactive barge-in & cadence simulator (uses Web Speech API + structured adversarial scripts, zero API keys required) so teams can feel interruption mechanics instantly.
-> - **Production Telephony / Enterprise B2B (`$3,000+` Self-Hosted Deployment)**: Full 8kHz raw RTP + FreeSWITCH + SOXR VHQ resampling + 256-frame outbound ring buffer (`0.16ms` hardware flush) engine lives in [ai-agent-voice/01-voice-agent-rtp-bargein](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein). Contact `153557421@qq.com` for enterprise voice gateway integration.
+> **Transparent Architecture & Commercial Scope**:
+> - **Free Open-Source Web Simulator (`hardcall.statementflow.win`)**: 100% free browser-based interactive barge-in & cadence simulator (Web Speech API + adversarial drills, zero login or credit card required).
+> - **B2B Enterprise Telephony Engineering (8kHz RTP / FreeSWITCH)**: Production raw 8kHz RTP + FreeSWITCH + SOXR VHQ resampling + 256-frame outbound ring buffer (`0.16ms` flush) lives in [ai-agent-voice/01-voice-agent-rtp-bargein](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein).
+>   - **$299** — 48h Voice Latency Audit Pilot (SIP/WebRTC bottleneck diagnosis & patch plan)
+>   - **$1,200** — Self-Hosted 8kHz RTP Deployment Kit (commercial license + Docker stack)
+>   - **$3,000+** — Custom Enterprise SIP/FreeSWITCH Integration & 30-day architecture support
+>   - B2B Contact: `153557421@qq.com` / `zhangsanx34@gmail.com`
 
 ---
 
