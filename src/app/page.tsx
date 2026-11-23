@@ -725,7 +725,7 @@ export default function HomePage() {
                   </button>
                   <button
                     onClick={handleAcceptCall}
-                    className="px-8 h-14 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold flex items-center gap-2 cursor-pointer shadow-lg transition-transform active:scale-95 animate-bounce"
+                    className="px-8 h-14 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold flex items-center gap-2 cursor-pointer shadow-lg ring-4 ring-emerald-400/35 hover:ring-emerald-400/60 transition-all active:scale-95"
                   >
                     <Phone className="w-5 h-5 fill-current" />
                     <span>{isEn ? "Accept & Listen" : "接听并开麦"}</span>
