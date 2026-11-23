@@ -10,26 +10,34 @@ interface Env {
     fetch: (request: Request) => Promise<Response>;
   };
   CREEM_API_KEY?: string;
-  CREEM_PRODUCT_ID_WEEKLY?: string;
-  CREEM_PRODUCT_ID_LIFETIME?: string;
+  CREEM_PRODUCT_ID_AUDIT?: string;
+  CREEM_PRODUCT_ID_KIT?: string;
   CREEM_WEBHOOK_SECRET?: string;
 }
 
 const PLAN_METADATA = {
-  weekly: {
-    name: "HardCall Weekly Sprint Pass",
-    amountUsd: 6.99,
+  audit: {
+    name: "HardCall 48h Voice Latency Audit Pilot",
+    amountUsd: 299,
   },
-  lifetime: {
-    name: "HardCall Lifetime Offer Pass",
-    amountUsd: 49.99,
+  kit: {
+    name: "HardCall 8kHz RTP Self-Hosted Deployment Kit",
+    amountUsd: 1200,
+  },
+  enterprise: {
+    name: "HardCall Custom Enterprise SIP/FreeSWITCH Integration",
+    amountUsd: 3000,
   },
 } as const;
 
 function jsonResponse(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8" },
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+    },
   });
 }
 
@@ -68,16 +76,23 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
       plan?: string;
       email?: string;
     };
-    const plan = body.plan === "lifetime" ? "lifetime" : "weekly";
+    const plan: keyof typeof PLAN_METADATA =
+      body.plan === "kit"
+        ? "kit"
+        : body.plan === "enterprise"
+        ? "enterprise"
+        : "audit";
     const customerEmail = body.email?.trim() || "";
     const meta = PLAN_METADATA[plan];
     const origin = request.headers.get("origin") || new URL(request.url).origin;
 
     const creemApiKey = env.CREEM_API_KEY?.trim();
     const productId =
-      plan === "lifetime"
-        ? env.CREEM_PRODUCT_ID_LIFETIME?.trim() || env.CREEM_PRODUCT_ID_WEEKLY?.trim()
-        : env.CREEM_PRODUCT_ID_WEEKLY?.trim() || env.CREEM_PRODUCT_ID_LIFETIME?.trim();
+      plan === "audit"
+        ? env.CREEM_PRODUCT_ID_AUDIT?.trim()
+        : plan === "kit"
+        ? env.CREEM_PRODUCT_ID_KIT?.trim()
+        : "";
 
     if (creemApiKey && productId) {
       const creemPayload: Record<string, unknown> = {
@@ -112,12 +127,12 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
     }
 
     return jsonResponse({
-      mode: "sandbox",
-      gateway: "Creem.io MoR Sandbox",
+      mode: "concierge_invoice",
+      gateway: "Direct B2B Invoice",
       plan,
       planName: meta.name,
       amountUsd: meta.amountUsd,
-      sessionId: `hc_sbx_${plan}_${Date.now()}`,
+      contactEmail: "153557421@qq.com",
     });
   } catch {
     return jsonResponse({ error: "Unable to initialize checkout session." }, 500);
