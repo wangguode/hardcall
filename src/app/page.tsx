@@ -1117,104 +1117,11 @@ export default function HomePage() {
           <h2 className="text-3xl sm:text-5xl font-bold text-white">
             {isEn ? "One offer pays this back 2,500x over." : "拿到一个高薪 Offer，ROI 超过 2,500 倍。"}
           </h2>
-          <p className="text-sm sm:text-base text-[#a1a1a6] max-w-lg mx-auto">
+          <p className="text-sm sm:text-base text-[#a1a1a6] max-w-2xl mx-auto">
             {isEn
-              ? "Available directly in the Apple App Store. Manage and cancel anytime via Apple ID."
-              : "完全通过 Apple App Store 官方安全结算，随时在 Apple ID 中管理或取消。"}
+              ? "The browser barge-in simulator above is 100% free & open-source. Commercial engagements below are strictly for B2B telephony & Voice AI engineering teams."
+              : "上方浏览器端语音打断模拟器完全免费开源；下方商业方案仅面向有真实电话/实时语音低延迟需求的 B2B 企业与技术团队，100% 可落地交付。"}
           </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-10 text-left">
-            {/* 方案 1: 周度冲刺卡 */}
-            <div className="p-8 rounded-3xl bg-[#12141a] border-2 border-emerald-500 space-y-6 relative">
-              <span className="absolute -top-3 right-6 px-3 py-1 rounded-full bg-emerald-500 text-black text-xs font-bold uppercase">
-                {isEn ? "Most Popular" : "冲刺首选"}
-              </span>
-              <div>
-                <div className="text-xs font-mono font-bold text-emerald-400 uppercase">
-                  {isEn ? "INTERVIEW SPRINT PASS" : "求职冲刺周卡"}
-                </div>
-                <div className="text-4xl font-bold text-white mt-2">
-                  $6.99 <span className="text-base font-normal text-[#a1a1a6]">{isEn ? "/ week" : "/ 周"}</span>
-                </div>
-                <p className="text-xs text-[#a1a1a6] mt-2">
-                  {isEn
-                    ? "Ideal for your 2-to-4 week active interview sprint. Unlimited mock grilling across all 4 categories."
-                    : "适合 2~4 周的集中面试冲刺期，无限次对练行为、架构、薪资与演讲题库。"}
-                </p>
-              </div>
-
-              <ul className="space-y-2.5 text-xs text-[#d1d1d6]">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{isEn ? "Unlimited mock calls across all categories" : "全量畅享行为、架构、薪资与路演题库"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{isEn ? "Real-time mic speech input & filler analytics" : "实时麦克风收音与口癖词频雷达监控"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{isEn ? "Full post-call autopsy and $200K script rewrites" : "完整生成战后体检单与高管级话术改写"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{isEn ? "Cancel anytime in Apple ID Settings" : "随时可在苹果系统设置中一键取消续费"}</span>
-                </li>
-              </ul>
-
-              <button
-                onClick={() => {
-                  setCheckoutPlan("weekly");
-                  setShowCheckoutModal(true);
-                }}
-                className="w-full py-3.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm text-center transition-all cursor-pointer shadow-lg active:scale-95"
-              >
-                {isEn ? "Start Weekly Sprint ($6.99)" : "开启每周冲刺 ($6.99/周)"}
-              </button>
-            </div>
-
-            {/* 方案 2: 终身买断卡 */}
-            <div className="p-8 rounded-3xl bg-[#12141a] border border-white/10 space-y-6">
-              <div>
-                <div className="text-xs font-mono font-bold text-blue-400 uppercase">
-                  {isEn ? "LIFETIME OFFER PASS" : "终身买断通行证"}
-                </div>
-                <div className="text-4xl font-bold text-white mt-2">
-                  $49.99 <span className="text-base font-normal text-[#a1a1a6]">{isEn ? "one-time" : "一次付清"}</span>
-                </div>
-                <p className="text-xs text-[#a1a1a6] mt-2">
-                  {isEn
-                    ? "Pay once, own forever. Perfect for serial negotiators, executives & consultants."
-                    : "一次购买，终生使用。适合常态化商务谈判、述职答辩与演讲路演。"}
-                </p>
-              </div>
-
-              <ul className="space-y-2.5 text-xs text-[#d1d1d6]">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                  <span>{isEn ? "Universal access on iPhone, iPad and Mac" : "支持 iPhone / iPad / Mac 多端云同步"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                  <span>{isEn ? "Lifetime updates to all future persona & drill packs" : "终身免费升级未来所有考官与演说题库"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                  <span>{isEn ? "Zero recurring subscriptions" : "无任何月度或年度自动续费"}</span>
-                </li>
-              </ul>
-
-              <button
-                onClick={() => {
-                  setCheckoutPlan("lifetime");
-                  setShowCheckoutModal(true);
-                }}
-                className="w-full py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-sm text-center transition-all cursor-pointer"
-              >
-                {isEn ? "Buy Lifetime Pass ($49.99)" : "一次性买断 ($49.99)"}
-              </button>
-            </div>
-          </div>
 
           {verifiedNotice && (
             <div className="mt-8 p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-mono text-center">
