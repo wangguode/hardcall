@@ -1168,7 +1168,7 @@ export default function HomePage() {
                   </ul>
                 </div>
                 <a
-                  href="mailto:153557421@qq.com?subject=HardCall%20%24299%20Voice%20Latency%20Audit%20Pilot"
+                  href="mailto:zhangsanx34@gmail.com?subject=HardCall%20%24299%20Voice%20Latency%20Audit%20Pilot"
                   className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-center font-semibold text-xs transition-colors"
                 >
                   {isEn ? "Book $299 Latency Audit" : "预约 $299 架构体检"}
@@ -1187,7 +1187,7 @@ export default function HomePage() {
                   </ul>
                 </div>
                 <a
-                  href="mailto:153557421@qq.com?subject=HardCall%20%241200%20RTP%20Deployment%20Kit"
+                  href="mailto:zhangsanx34@gmail.com?subject=HardCall%20%241200%20RTP%20Deployment%20Kit"
                   className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-center font-bold text-xs transition-colors"
                 >
                   {isEn ? "Get $1,200 Deployment Kit" : "获取 $1,200 私有化部署包"}
@@ -1206,7 +1206,7 @@ export default function HomePage() {
                   </ul>
                 </div>
                 <a
-                  href="mailto:153557421@qq.com?subject=HardCall%20Enterprise%20Custom%20Voice%20Gateway"
+                  href="mailto:zhangsanx34@gmail.com?subject=HardCall%20Enterprise%20Custom%20Voice%20Gateway"
                   className="w-full py-2.5 rounded-xl bg-white text-black hover:bg-[#e5e5ea] text-center font-bold text-xs transition-colors"
                 >
                   {isEn ? "Request Enterprise Quote" : "咨询企业定制交付"}
@@ -1237,7 +1237,7 @@ export default function HomePage() {
               <h4 className="text-white font-semibold mb-2">Architect & Support Contact</h4>
               <p>
                 Architect: Wang Guo (@wangguode)<br />
-                B2B Email: <a href="mailto:153557421@qq.com" className="text-white underline">153557421@qq.com</a><br />
+                B2B Email: <a href="mailto:zhangsanx34@gmail.com" className="text-white underline">zhangsanx34@gmail.com</a><br />
                 GitHub: <a href="https://github.com/wangguode/ai-agent-voice" target="_blank" rel="noreferrer" className="text-white underline">wangguode/ai-agent-voice</a>
               </p>
             </div>

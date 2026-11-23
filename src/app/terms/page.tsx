@@ -123,13 +123,6 @@ export default function TermsOfUsePage() {
               className="text-emerald-400 underline"
             >
               zhangsanx34@gmail.com
-            </a>{" "}
-            or{" "}
-            <a
-              href="mailto:153557421@qq.com"
-              className="text-emerald-400 underline"
-            >
-              153557421@qq.com
             </a>
             .
           </p>
