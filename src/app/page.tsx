@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import BargeInComparePlayer from "@/components/BargeInComparePlayer";
 import {
   Phone,
   PhoneCall,
@@ -1114,6 +1115,9 @@ export default function HomePage() {
                 {isEn ? "Inspect Open-Source RTP Lab →" : "查看开源 8kHz RTP 实验室 →"}
               </a>
             </div>
+
+            {/* 实机声波对比演示器：亲耳对比 920ms WebSocket 尾音重叠 vs 52ms 8kHz RTP 硬截断 */}
+            <BargeInComparePlayer isEn={isEn} />
 
             {/* 实机延迟对比基准表 */}
             <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0a0c10]">
