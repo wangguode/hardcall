@@ -47,10 +47,10 @@ export default function TermsOfUsePage() {
             you experience technical issues or wish to request a refund within 7
             days of purchase, please email{" "}
             <a
-              href="mailto:zhangsanx34@gmail.com"
+              href="mailto:hello@statementflow.win"
               className="text-emerald-400 underline"
             >
-              zhangsanx34@gmail.com
+              hello@statementflow.win
             </a>{" "}
             with your order reference.
           </p>
@@ -119,10 +119,10 @@ export default function TermsOfUsePage() {
             Questions regarding these Terms or Acceptable Use Policy may be sent
             to{" "}
             <a
-              href="mailto:zhangsanx34@gmail.com"
+              href="mailto:hello@statementflow.win"
               className="text-emerald-400 underline"
             >
-              zhangsanx34@gmail.com
+              hello@statementflow.win
             </a>
             .
           </p>

@@ -18,7 +18,7 @@
 >   - **$299** — 48h Voice Latency Audit Pilot (SIP/WebRTC bottleneck diagnosis & patch plan)
 >   - **$1,200** — Self-Hosted 8kHz RTP Deployment Kit (commercial license + Docker stack)
 >   - **$3,000+** — Custom Enterprise SIP/FreeSWITCH Integration & 30-day architecture support
->   - B2B Contact: `zhangsanx34@gmail.com` / `zhangsanx34@gmail.com`
+>   - B2B Contact: `hello@statementflow.win` / `hello@statementflow.win`
 
 ---
 

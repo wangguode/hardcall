@@ -73,10 +73,10 @@ export default function PrivacyPolicyPage() {
             order metadata associated with your email address at any time by
             contacting us at{" "}
             <a
-              href="mailto:zhangsanx34@gmail.com"
+              href="mailto:hello@statementflow.win"
               className="text-emerald-400 underline"
             >
-              zhangsanx34@gmail.com
+              hello@statementflow.win
             </a>
             .
           </p>

@@ -132,7 +132,7 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
       plan,
       planName: meta.name,
       amountUsd: meta.amountUsd,
-      contactEmail: "zhangsanx34@gmail.com",
+      contactEmail: "hello@statementflow.win",
     });
   } catch {
     return jsonResponse({ error: "Unable to initialize checkout session." }, 500);

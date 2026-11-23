@@ -1189,7 +1189,7 @@ export default function HomePage() {
                   </ul>
                 </div>
                 <a
-                  href="mailto:zhangsanx34@gmail.com?subject=HardCall%20%241200%20RTP%20Deployment%20Kit"
+                  href="mailto:hello@statementflow.win?subject=HardCall%20%241200%20RTP%20Deployment%20Kit"
                   className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-center font-bold text-xs transition-colors"
                 >
                   {isEn ? "Get $1,200 Deployment Kit" : "获取 $1,200 私有化部署包"}
@@ -1208,7 +1208,7 @@ export default function HomePage() {
                   </ul>
                 </div>
                 <a
-                  href="mailto:zhangsanx34@gmail.com?subject=HardCall%20Enterprise%20Custom%20Voice%20Gateway"
+                  href="mailto:hello@statementflow.win?subject=HardCall%20Enterprise%20Custom%20Voice%20Gateway"
                   className="w-full py-2.5 rounded-xl bg-white text-black hover:bg-[#e5e5ea] text-center font-bold text-xs transition-colors"
                 >
                   {isEn ? "Request Enterprise Quote" : "咨询企业定制交付"}
@@ -1239,7 +1239,7 @@ export default function HomePage() {
               <h4 className="text-white font-semibold mb-2">Architect & Support Contact</h4>
               <p>
                 Architect: Wang Guo (@wangguode)<br />
-                B2B Email: <a href="mailto:zhangsanx34@gmail.com" className="text-white underline">zhangsanx34@gmail.com</a><br />
+                B2B Email: <a href="mailto:hello@statementflow.win" className="text-white underline">hello@statementflow.win</a><br />
                 GitHub: <a href="https://github.com/wangguode/ai-agent-voice" target="_blank" rel="noreferrer" className="text-white underline">wangguode/ai-agent-voice</a>
               </p>
             </div>
@@ -1251,7 +1251,7 @@ export default function HomePage() {
               <a href="/privacy" className="hover:text-white underline">Privacy Policy</a>
               <a href="/terms" className="hover:text-white underline">Terms of Use</a>
               <a href="/terms#acceptable-use" className="hover:text-white underline">Acceptable Use Policy</a>
-              <a href="mailto:zhangsanx34@gmail.com" className="hover:text-white">Support</a>
+              <a href="mailto:hello@statementflow.win" className="hover:text-white">Support</a>
             </div>
           </div>
         </div>
