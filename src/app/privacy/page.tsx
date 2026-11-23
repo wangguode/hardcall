@@ -42,13 +42,14 @@ export default function PrivacyPolicyPage() {
             2. Payment &amp; Billing Data (Creem.io)
           </h2>
           <p>
-            All paid purchases (Weekly Sprint Pass and Lifetime Offer Pass) are
-            processed by our Merchant of Record, <strong>Creem.io</strong>.
-            Credit card numbers, billing addresses, and tax invoices are
-            collected and secured directly by Creem.io under their privacy and
-            PCI-DSS compliance standards. HardCall receives only order status,
-            plan tier, and customer email metadata via signed webhooks to unlock
-            your access.
+            Commercial B2B engagements (Voice Latency Audit Pilot, 8kHz RTP
+            Deployment Kit, and Custom Enterprise Integrations) may be invoiced
+            directly or processed via our Merchant of Record,{" "}
+            <strong>Creem.io</strong>. Credit card numbers, billing addresses,
+            and tax invoices are collected and secured directly by Creem.io
+            under their privacy and PCI-DSS compliance standards. HardCall
+            receives only order status, plan tier, and customer email metadata
+            via signed webhooks to fulfill your engagement.
           </p>
         </section>
 
@@ -79,10 +80,10 @@ export default function PrivacyPolicyPage() {
             </a>{" "}
             or{" "}
             <a
-              href="mailto:17768113090@163.com"
+              href="mailto:153557421@qq.com"
               className="text-emerald-400 underline"
             >
-              17768113090@163.com
+              153557421@qq.com
             </a>
             .
           </p>

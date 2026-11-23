@@ -39,11 +39,13 @@ export default function TermsOfUsePage() {
           </h2>
           <p>
             Online web purchases are processed by Creem.io as our authorized
-            Merchant of Record. Weekly Sprint Passes ($6.99/week) and Lifetime
-            Offer Passes ($49.99 one-time) grant digital software access
-            immediately upon payment confirmation. If you experience technical
-            issues or wish to request a refund within 7 days of purchase, please
-            email{" "}
+            Merchant of Record. Commercial B2B engagements include the Voice
+            Latency Audit Pilot ($299 one-time), Self-Hosted 8kHz RTP
+            Deployment Kit ($1,200 license), and Custom Enterprise Integrations
+            ($3,000+), granting agreed software deliverables and engineering
+            support. The web browser simulator is provided free of charge. If
+            you experience technical issues or wish to request a refund within 7
+            days of purchase, please email{" "}
             <a
               href="mailto:zhangsanx34@gmail.com"
               className="text-emerald-400 underline"
@@ -124,10 +126,10 @@ export default function TermsOfUsePage() {
             </a>{" "}
             or{" "}
             <a
-              href="mailto:17768113090@163.com"
+              href="mailto:153557421@qq.com"
               className="text-emerald-400 underline"
             >
-              17768113090@163.com
+              153557421@qq.com
             </a>
             .
           </p>

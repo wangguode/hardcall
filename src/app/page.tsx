@@ -14,7 +14,6 @@ import {
   XCircle,
   ArrowRight,
   Lock,
-  Apple,
   Globe,
   ChevronRight,
   Star,
@@ -196,12 +195,6 @@ export default function HomePage() {
     { speaker: string; text: string; isInterrupt: boolean; note?: string }[]
   >([]);
   const [userCustomInput, setUserCustomInput] = useState("");
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [checkoutPlan, setCheckoutPlan] = useState<"weekly" | "lifetime">("weekly");
-  const [promoCode, setPromoCode] = useState("");
-  const [promoMessage, setPromoMessage] = useState("");
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [checkoutError, setCheckoutError] = useState("");
   const [verifiedNotice, setVerifiedNotice] = useState("");
 
   // Creem 支付成功回跳时，向服务端 /api/verify-checkout 核验订单后再持久解锁
@@ -407,43 +400,6 @@ export default function HomePage() {
     setCallStatus("ended");
   };
 
-  const handleRedeemPromo = () => {
-    if (promoCode.toUpperCase().startsWith("HC-")) {
-      setPromoMessage(isEn ? "VIP Pass Activated (Local Sandbox)" : "VIP 通行码已在本地沙盒激活成功！");
-    } else {
-      setPromoMessage(isEn ? "Invalid code. Format: HC-OFFER-2026" : "无效兑换码。示例格式：HC-OFFER-2026");
-    }
-  };
-
-  const handleCreemCheckout = async () => {
-    setCheckoutLoading(true);
-    setCheckoutError("");
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: checkoutPlan }),
-      });
-      if (!res.ok) throw new Error("Checkout init failed");
-      const data = (await res.json()) as { mode?: string; checkoutUrl?: string };
-      if (data.mode === "live_redirect" && data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-        return;
-      }
-      setPromoMessage(
-        isEn
-          ? "Sandbox Pass Activated (Creem keys pending)"
-          : "沙盒通行证已激活（待填入 Creem 实时密钥）"
-      );
-    } catch {
-      setCheckoutError(
-        isEn ? "Unable to initialize Creem checkout. Please retry." : "初始化 Creem 结账失败，请重试。"
-      );
-    } finally {
-      setCheckoutLoading(false);
-    }
-  };
-
   const formatTime = (sec: number) => {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
@@ -503,11 +459,11 @@ export default function HomePage() {
       <section className="relative pt-12 sm:pt-16 pb-20 px-4 sm:px-8 border-b border-white/10 overflow-hidden">
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <div className="inline-flex max-w-full items-center justify-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] sm:text-xs font-medium text-emerald-400">
-            <Apple className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <Zap className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span className="truncate">
               {isEn
-                ? "Native iOS & Mac App · Built with Swift 6, Speech & StoreKit 2"
-                : "纯正 iOS & Mac 原生应用 · Swift 6 + Apple Speech + StoreKit 2"}
+                ? "Open-Source Barge-In Simulator · 8kHz RTP / FreeSWITCH B2B Architecture"
+                : "开源实时打断模拟器 · 8kHz RTP / FreeSWITCH 企业级语音网关架构"}
             </span>
           </div>
 
@@ -1083,39 +1039,39 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="p-6 rounded-3xl bg-[#12141a] border border-white/10 space-y-4">
               <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-400">
-                <Apple className="w-4 h-4" />
-                <span>{isEn ? "CLIENT LAYER: APPLE ON-DEVICE ENGINE" : "客户端层：苹果本地免运维引擎"}</span>
+                <Zap className="w-4 h-4" />
+                <span>{isEn ? "BROWSER LAYER: ZERO-SETUP SIMULATOR" : "浏览器层：零门槛本地交互仿真"}</span>
               </div>
               <ul className="space-y-2.5 text-xs text-[#a1a1a6]">
-                <li>• <b>Swift 6 + SFSpeechRecognizer</b>：音频在 Mac/iPhone 芯片本地毫秒级听写，无云端音频存储风险。</li>
-                <li>• <b>AVSpeechSynthesizer</b>：超拟真原生美式发音，零服务器开销与流量费。</li>
-                <li>• <b>零边际成本</b>：个人开发者无需维护昂贵 GPU 集群，纯享被动睡后收入。</li>
+                <li>• <b>{isEn ? "Web Speech + Local Barge-In State Machine" : "Web Speech + 本地打断状态机"}</b>{isEn ? ": Instant browser-side speech recognition and interruption simulation with zero audio stored on servers." : "：浏览器本地即时听写与打断状态演练，原始音频不落盘、零云端隐私风险。"}</li>
+                <li>• <b>{isEn ? "Live Filler & Skepticism Telemetry" : "实时口头禅与怀疑度遥测"}</b>{isEn ? ": Real-time WPM pacing, filler word counters, and structured post-call rewrite scripts." : "：实时统计语速与口头禅频次，通话结束自动生成高密度重构话术。"}</li>
+                <li>• <b>{isEn ? "100% Free & Open-Source Demo" : "100% 免费开源体验"}</b>{isEn ? ": No credit card or login required to test barge-in ergonomics before deploying telephony." : "：无需绑卡或注册，先在浏览器体验完整打断交互逻辑，再决定是否接入生产电话网关。"}</li>
               </ul>
             </div>
 
             <div className="p-6 rounded-3xl bg-[#14161f] border border-emerald-500/40 space-y-4">
               <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-400">
                 <Server className="w-4 h-4" />
-                <span>{isEn ? "ENTERPRISE LAYER: RTP / WEBRTC GATEWAY" : "企业级网关：voice-agent-rtp-gateway"}</span>
+                <span>{isEn ? "ENTERPRISE LAYER: 8kHz RTP / SIP GATEWAY" : "企业级网关：8kHz RTP / FreeSWITCH 底座"}</span>
               </div>
               <ul className="space-y-2.5 text-xs text-[#f5f5f7]">
-                <li>• <b>SIP / RTP 电话拨号仿真</b>：支持拨通真实手机与 PSTN 线路进行真人电话对练。</li>
-                <li>• <b>8kHz G.711 声学失真</b>：模拟真实手机通话丢包与地铁背景杂音。</li>
-                <li>• <b>ReAct 大模型考官大脑</b>：支持灵活接入自定义大模型生成动态连环追问。</li>
+                <li>• <b>{isEn ? "SIP / RTP Telephony Trunking" : "SIP / RTP 真实电话中继"}</b>{isEn ? ": Connects directly to FreeSWITCH / Asterisk PSTN trunks with 20ms packetization and <60ms barge-in cutoff." : "：直连 FreeSWITCH / Asterisk 真实 PSTN 线路，20ms 分帧传输，实现 <60ms 真打断静音。"}</li>
+                <li>• <b>{isEn ? "Native 8kHz G.711 / PCM Pipeline" : "原生 8kHz G.711 / PCM 声学管线"}</b>{isEn ? ": Eliminates WebSocket transcoding jitter and handles real-world packet loss and carrier echo." : "：消除 WebSocket 重采样抖动，专门针对真实运营商丢包与回声抑制调优。"}</li>
+                <li>• <b>{isEn ? "Pluggable ASR / LLM / TTS Orchestrator" : "可插拔 ASR / LLM / TTS 编排"}</b>{isEn ? ": Works with Deepgram, Whisper, OpenAI/Qwen/Claude, and ElevenLabs/Cartesia in your own VPC." : "：支持在企业自有 VPC 内灵活对接 Deepgram、Qwen、OpenAI、ElevenLabs 等主流模型。"}</li>
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 定价转化区 (StoreKit 2 冲刺定价) */}
+      {/* B2B 工程服务与商业授权定价区 */}
       <section id="pricing" className="py-20 px-4 sm:px-8 bg-[#0b0c10]">
         <div className="max-w-4xl mx-auto text-center space-y-4">
           <div className="text-xs font-mono text-emerald-400 uppercase tracking-widest font-bold">
-            {isEn ? "PRICING DESIGNED FOR SPRINT SUCCESS" : "为求职冲刺量身打造的透明定价"}
+            {isEn ? "TRANSPARENT B2B ENGINEERING TIERS" : "透明可交付的企业级工程定价"}
           </div>
           <h2 className="text-3xl sm:text-5xl font-bold text-white">
-            {isEn ? "One offer pays this back 2,500x over." : "拿到一个高薪 Offer，ROI 超过 2,500 倍。"}
+            {isEn ? "Ship sub-100ms telephony barge-in without months of R&D." : "省去数月底层踩坑，直接上线亚百毫秒级电话打断网关。"}
           </h2>
           <p className="text-sm sm:text-base text-[#a1a1a6] max-w-2xl mx-auto">
             {isEn
@@ -1257,35 +1213,34 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 苹果 App Store 强制合规区 (Guideline 5.1.1 隐私 + 3.1.2 条款 + 支持) */}
+      {/* 合规与企业技术支持页脚 */}
       <footer id="compliance" className="border-t border-white/10 bg-[#060709] py-14 px-4 sm:px-8 text-xs text-[#86868b] leading-relaxed">
         <div className="max-w-5xl mx-auto space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <h4 className="text-white font-semibold mb-2">Privacy Policy (Guideline 5.1.1)</h4>
+              <h4 className="text-white font-semibold mb-2">Privacy & Ephemeral Audio</h4>
               <p>
-                HardCall processes all user voice inputs locally and ephemerally. Audio recordings are strictly used for live barge-in interruption detection and post-call feedback generation. We never sell, store permanently, or transmit raw audio to third parties.
+                The browser simulator processes microphone inputs locally via Web Speech API with zero server storage. Enterprise B2B deployments run 100% inside your private VPC / FreeSWITCH cluster with zero third-party audio egress.
               </p>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-2">Terms & Auto-Renewal (Guideline 3.1.2)</h4>
+              <h4 className="text-white font-semibold mb-2">B2B Commercial Licensing</h4>
               <p>
-                Subscription ($6.99/week) renews automatically unless auto-renew is cancelled at least 24 hours prior to the end of the current billing cycle in your Apple ID Settings. Governed by standard Apple EULA.
+                Browser simulator and reference RTP lab are MIT open-source. Commercial pilots ($299 Latency Audit), self-hosted RTP deployment kits ($1,200), and enterprise custom integrations ($3,000+) are governed by direct commercial SOW & Creem.io invoicing.
               </p>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-2">Support & Developer Contact</h4>
+              <h4 className="text-white font-semibold mb-2">Architect & Support Contact</h4>
               <p>
-                Developer: Wang Guo (@wangguode)<br />
-                Support Email: <a href="mailto:17768113090@163.com" className="text-white underline">17768113090@163.com</a><br />
-                Bundle ID: com.wangguo.hardcall<br />
-                Primary Category: Education / Career Tools
+                Architect: Wang Guo (@wangguode)<br />
+                B2B Email: <a href="mailto:153557421@qq.com" className="text-white underline">153557421@qq.com</a><br />
+                GitHub: <a href="https://github.com/wangguode/ai-agent-voice" target="_blank" rel="noreferrer" className="text-white underline">wangguode/ai-agent-voice</a>
               </p>
             </div>
           </div>
 
           <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>Copyright © 2026 Wang Guo (17768113090@163.com). All rights reserved.</div>
+            <div>Copyright © 2026 Wang Guo (@wangguode). All rights reserved.</div>
             <div className="flex flex-wrap gap-4">
               <a href="/privacy" className="hover:text-white underline">Privacy Policy</a>
               <a href="/terms" className="hover:text-white underline">Terms of Use</a>
@@ -1295,118 +1250,6 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-
-      {/* 购买与兑换弹窗 */}
-      {showCheckoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="bg-[#12141a] border border-white/15 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white">
-                {checkoutPlan === "weekly"
-                  ? isEn
-                    ? "Unlock Weekly Sprint ($6.99)"
-                    : "解锁每周冲刺通行证 ($6.99/周)"
-                  : isEn
-                  ? "Unlock Lifetime Offer Pass ($49.99)"
-                  : "解锁终身买断通行证 ($49.99)"}
-              </h3>
-              <button
-                onClick={() => {
-                  setShowCheckoutModal(false);
-                  setPromoMessage("");
-                }}
-                className="text-[#a1a1a6] hover:text-white text-sm"
-              >
-                ✕
-              </button>
-            </div>
-
-            <p className="text-xs text-[#a1a1a6]">
-              {isEn
-                ? "Checkout is processed securely via Creem.io (Global Merchant of Record — Credit Card, Apple Pay & EU/UK VAT handled automatically)."
-                : "通过 Creem.io 全球名义商户安全结账（自动处理全球信用卡、Apple Pay 与海外税费）。"}
-            </p>
-
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-[#a1a1a6]">{isEn ? "Item" : "项目"}</span>
-                <span className="text-white font-mono">
-                  {checkoutPlan === "weekly" ? "com.wangguo.hardcall.weekly" : "com.wangguo.hardcall.lifetime"}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-[#a1a1a6]">{isEn ? "Price" : "价格"}</span>
-                <span className="text-emerald-400 font-bold font-mono">
-                  {checkoutPlan === "weekly" ? "$6.99 / week" : "$49.99 once"}
-                </span>
-              </div>
-            </div>
-
-            {/* VIP 兑换码测试 */}
-            <div className="space-y-2">
-              <div className="text-xs text-[#a1a1a6] font-medium">
-                {isEn ? "Have a VIP Promo Code?" : "拥有 VIP 免费通行码？"}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="e.g. HC-OFFER-2026"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                  className="flex-1 px-3 py-1.5 rounded-lg bg-black border border-white/20 text-xs text-white uppercase font-mono"
-                />
-                <button
-                  onClick={handleRedeemPromo}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-500 text-black text-xs font-bold"
-                >
-                  {isEn ? "Redeem" : "兑换"}
-                </button>
-              </div>
-              {promoMessage && (
-                <div className="text-xs font-mono text-emerald-400">{promoMessage}</div>
-              )}
-            </div>
-
-            <div className="space-y-2 pt-2">
-              {checkoutError && (
-                <div className="text-xs font-mono text-red-400">{checkoutError}</div>
-              )}
-              <button
-                type="button"
-                disabled={checkoutLoading}
-                onClick={handleCreemCheckout}
-                className="w-full py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 text-black font-bold text-xs text-center block cursor-pointer"
-              >
-                {checkoutLoading
-                  ? isEn
-                    ? "Redirecting to Creem.io..."
-                    : "正在跳转 Creem.io 安全收银台..."
-                  : isEn
-                  ? `Pay ${checkoutPlan === "weekly" ? "$6.99/wk" : "$49.99"} via Creem.io`
-                  : `通过 Creem.io 立即购买 (${checkoutPlan === "weekly" ? "$6.99/周" : "$49.99 买断"})`}
-              </button>
-              <a
-                href="https://github.com/wangguode/hardcall"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium text-xs text-center block"
-              >
-                {isEn ? "View Open-Source macOS App on GitHub" : "前往 GitHub 获取 macOS 开源客户端"}
-              </a>
-              <button
-                onClick={() => {
-                  setShowCheckoutModal(false);
-                  setPromoMessage("");
-                  setCheckoutError("");
-                }}
-                className="w-full py-2 rounded-full bg-transparent hover:bg-white/5 text-[#a1a1a6] font-medium text-xs text-center block"
-              >
-                {isEn ? "Close" : "关闭"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
