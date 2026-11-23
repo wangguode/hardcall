@@ -1168,10 +1168,12 @@ export default function HomePage() {
                   </ul>
                 </div>
                 <a
-                  href="mailto:zhangsanx34@gmail.com?subject=HardCall%20%24299%20Voice%20Latency%20Audit%20Pilot"
+                  href="https://www.creem.io/product/prod_3kasfDA37SLjb1Wxz5aBVB"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-center font-semibold text-xs transition-colors"
                 >
-                  {isEn ? "Book $299 Latency Audit" : "预约 $299 架构体检"}
+                  {isEn ? "Book $299 Latency Audit (Instant Checkout)" : "立即下单 $299 架构体检（48h 交付）"}
                 </a>
               </div>
 
