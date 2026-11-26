@@ -128,6 +128,15 @@ async function ensureHcTables(env: Env): Promise<void> {
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )`
     ).run();
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS hc_funnel_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event TEXT NOT NULL,
+        country TEXT NOT NULL DEFAULT 'XX',
+        meta_json TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )`
+    ).run();
     hcSchemaReady = true;
   } catch {
     // ignore
@@ -524,6 +533,28 @@ const worker = {
 
     if (pathname === "/api/health" && request.method === "GET") {
       return jsonResponse({ ok: true, service: "hardcall" });
+    }
+
+    if (pathname === "/api/event" && request.method === "POST") {
+      if (!checkRateLimit(request, "event", 60)) {
+        return jsonResponse({ ok: true, throttled: true });
+      }
+      try {
+        const body = (await request.json()) as { event?: string; meta?: Record<string, unknown> };
+        const ev = String(body.event || "unknown").slice(0, 48);
+        const country = (request.headers.get("cf-ipcountry") || "XX").slice(0, 8);
+        if (env.DB) {
+          await ensureHcTables(env);
+          await env.DB.prepare(
+            `INSERT INTO hc_funnel_events (event, country, meta_json) VALUES (?1, ?2, ?3)`
+          )
+            .bind(ev, country, JSON.stringify(body.meta || {}).slice(0, 260))
+            .run();
+        }
+        return jsonResponse({ ok: true });
+      } catch {
+        return jsonResponse({ ok: false }, 400);
+      }
     }
 
     if (pathname === "/api/stats" && request.method === "GET") {

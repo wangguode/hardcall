@@ -282,6 +282,18 @@ export default function HomePage() {
       .catch(() => {});
   }, [isEn]);
 
+  useEffect(() => {
+    fetch("/api/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: "page_view",
+        meta: { ref: (document.referrer || "direct").slice(0, 100) },
+      }),
+      keepalive: true,
+    }).catch(() => {});
+  }, []);
+
   const handleB2bCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!b2bModalPlan) return;
@@ -556,6 +568,23 @@ export default function HomePage() {
               <a href="#pricing" className="hover:text-white transition-colors">
                 {isEn ? "B2B Pricing" : "企业方案"}
               </a>
+              <a
+                href="https://github.com/wangguode/hardcall"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  fetch("/api/event", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ event: "github_click" }),
+                    keepalive: true,
+                  }).catch(() => {});
+                }}
+                className="hover:text-emerald-400 transition-colors inline-flex items-center gap-1"
+              >
+                <Star className="w-3 h-3 text-emerald-400" />
+                <span>GitHub</span>
+              </a>
             </nav>
           </div>
 
@@ -577,7 +606,15 @@ export default function HomePage() {
             </button>
             <button
               type="button"
-              onClick={() => setB2bModalPlan("audit")}
+              onClick={() => {
+                fetch("/api/event", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ event: "b2b_modal_open", meta: { src: "topbar" } }),
+                  keepalive: true,
+                }).catch(() => {});
+                setB2bModalPlan("audit");
+              }}
               className="text-xs px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-semibold transition-colors cursor-pointer"
             >
               {isEn ? "Book $299 Audit" : "预约 $299 压测"}
