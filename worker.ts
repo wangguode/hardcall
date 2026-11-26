@@ -28,6 +28,7 @@ interface Env {
   CREEM_PRODUCT_ID_AUDIT?: string;
   CREEM_PRODUCT_ID_KIT?: string;
   CREEM_WEBHOOK_SECRET?: string;
+  ADMIN_API_KEY?: string;
   RESEND_API_KEY?: string;
   RESEND_FROM_EMAIL?: string;
 }
@@ -93,9 +94,17 @@ async function ensureHcTables(env: Env): Promise<void> {
         status TEXT NOT NULL DEFAULT 'completed',
         restore_token TEXT NOT NULL DEFAULT '',
         stack_note TEXT NOT NULL DEFAULT '',
+        email_sent INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )`
     ).run();
+    try {
+      await env.DB.prepare(
+        `ALTER TABLE hc_orders ADD COLUMN email_sent INTEGER NOT NULL DEFAULT 0`
+      ).run();
+    } catch {
+      // 列已存在时安全忽略
+    }
     await env.DB.prepare(
       `CREATE TABLE IF NOT EXISTS email_outbox (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -203,7 +212,7 @@ async function sendHcEmail(
       )
         .bind(params.to, params.subject, params.text)
         .run();
-      fetch("https://pulse.statementflow.win/api/internal/flush-outbox", {
+      await fetch("https://pulse.statementflow.win/api/internal/flush-outbox", {
         method: "POST",
       }).catch(() => {});
       return true;
@@ -336,42 +345,53 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
         .run();
 
       if (status === "completed" && email) {
-        const activateUrl = `https://hardcall.statementflow.win/?restore_token=${encodeURIComponent(restoreToken)}`;
-        await sendHcEmail(env, {
-          to: email,
-          subject:
-            plan === "kit"
-              ? "HardCall 8kHz RTP Self-Hosted Deployment Kit ($1,200) — Onboarding & Access"
-              : "HardCall 48h Voice Latency Audit ($299) — Kickoff Instructions",
-          text: [
-            "Welcome to HardCall B2B Voice Engineering!",
-            "",
-            `Engagement Confirmed: ${plan === "kit" ? "8kHz RTP Self-Hosted Deployment Kit ($1,200)" : "48h Voice Latency Audit & Benchmark ($299)"}`,
-            `Order ID: ${orderId}`,
-            "",
-            "Next Steps (Kickoff within 4 hours):",
-            plan === "kit"
-              ? "Reply directly to this email (hello@statementflow.win) with your GitHub handle and preferred FreeSWITCH/SIP environment so we can provision your commercial Docker bundle and schedule your 2-hour onboarding call."
-              : "Reply directly to this email (hello@statementflow.win) with a test SIP/WebRTC endpoint or a 60-second call recording + current STT/LLM/TTS stack. Your frame-level barge-in latency report will be delivered within 48 hours.",
-            "",
-            `License Verification Link: ${activateUrl}`,
-            "",
-            "— Wang Guo, HardCall Voice Architecture",
-          ].join("\n"),
-        });
+        const saved = await env.DB.prepare(
+          `SELECT restore_token, email_sent FROM hc_orders WHERE order_id = ?1 LIMIT 1`
+        )
+          .bind(orderId)
+          .first<{ restore_token: string; email_sent?: number }>();
+        if (!saved || Number(saved.email_sent || 0) === 0) {
+          await env.DB.prepare(`UPDATE hc_orders SET email_sent = 1 WHERE order_id = ?1`)
+            .bind(orderId)
+            .run();
+          const activeToken = saved?.restore_token || restoreToken;
+          const activateUrl = `https://hardcall.statementflow.win/?restore_token=${encodeURIComponent(activeToken)}`;
+          await sendHcEmail(env, {
+            to: email,
+            subject:
+              plan === "kit"
+                ? "HardCall 8kHz RTP Self-Hosted Deployment Kit ($1,200) — Onboarding & Access"
+                : "HardCall 48h Voice Latency Audit ($299) — Kickoff Instructions",
+            text: [
+              "Welcome to HardCall B2B Voice Engineering!",
+              "",
+              `Engagement Confirmed: ${plan === "kit" ? "8kHz RTP Self-Hosted Deployment Kit ($1,200)" : "48h Voice Latency Audit & Benchmark ($299)"}`,
+              `Order ID: ${orderId}`,
+              "",
+              "Next Steps (Instant Vault + Kickoff within 4 hours):",
+              plan === "kit"
+                ? "Open your License Verification Link below to instantly download your Docker Compose + FreeSWITCH 20ms + SOXR VHQ bundle, and submit your GitHub handle for private repository access."
+                : "Open your License Verification Link below or reply to hello@statementflow.win with a test SIP/WebRTC endpoint + current STT/LLM/TTS stack. Your frame-level barge-in latency report will be delivered within 48 hours.",
+              "",
+              `License Verification & Vault Link: ${activateUrl}`,
+              "",
+              "— Wang Guo, HardCall Voice Architecture",
+            ].join("\n"),
+          });
 
-        await sendHcEmail(env, {
-          to: "hello@statementflow.win",
-          subject: `💰 [HardCall B2B Paid] $${amountUsd} (${plan.toUpperCase()}) from ${email}`,
-          text: [
-            `New Paid B2B Engagement on HardCall!`,
-            `- Order ID: ${orderId}`,
-            `- Customer: ${email}`,
-            `- Tier: ${plan.toUpperCase()} ($${amountUsd})`,
-            `- Stack Note: ${stackNote || "None"}`,
-            `- Activation Link Sent: ${activateUrl}`,
-          ].join("\n"),
-        });
+          await sendHcEmail(env, {
+            to: "hello@statementflow.win",
+            subject: `💰 [HardCall B2B Paid] $${amountUsd} (${plan.toUpperCase()}) from ${email}`,
+            text: [
+              `New Paid B2B Engagement on HardCall!`,
+              `- Order ID: ${orderId}`,
+              `- Customer: ${email}`,
+              `- Tier: ${plan.toUpperCase()} ($${amountUsd})`,
+              `- Stack Note: ${stackNote || "None"}`,
+              `- Activation Link Sent: ${activateUrl}`,
+            ].join("\n"),
+          });
+        }
       }
     } catch {
       // ignore
@@ -413,6 +433,7 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
     const verified = data.status === "completed";
     const plan = data.metadata?.plan === "kit" ? "kit" : "audit";
     const email = (data.customer?.email || "").trim().toLowerCase();
+    let restoreToken = "";
     if (verified && env.DB && data.id) {
       await ensureHcTables(env);
       try {
@@ -431,6 +452,12 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
             (data.metadata?.stackNote || "").slice(0, 180)
           )
           .run();
+        const saved = await env.DB.prepare(
+          `SELECT restore_token FROM hc_orders WHERE order_id = ?1 LIMIT 1`
+        )
+          .bind(data.id)
+          .first<{ restore_token: string }>();
+        restoreToken = saved?.restore_token || tok;
       } catch {
         // ignore
       }
@@ -441,6 +468,7 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
       checkoutId: data.id,
       plan,
       email,
+      restoreToken,
     });
   } catch {
     return jsonResponse({ verified: false, error: "Verification failed" }, 500);
@@ -499,6 +527,11 @@ const worker = {
     }
 
     if (pathname === "/api/stats" && request.method === "GET") {
+      const adminKey = env.ADMIN_API_KEY?.trim() || "";
+      const provided = (request.headers.get("x-admin-key") || "").trim();
+      if (!adminKey || !provided || !timingSafeEqualHex(provided, adminKey)) {
+        return jsonResponse({ error: "Unauthorized" }, 401);
+      }
       if (!env.DB) return jsonResponse({ ok: false }, 503);
       await ensureHcTables(env);
       const ordersRes = await env.DB.prepare(
@@ -528,25 +561,42 @@ const worker = {
           notes?: string;
         };
         const orderRef = (body.orderRef || "").trim().slice(0, 80);
-        const email = (body.email || "").trim().slice(0, 120);
+        const email = (body.email || "").trim().toLowerCase().slice(0, 120);
         const sipOrRepo = (body.sipOrRepo || "").trim().slice(0, 240);
         const notes = (body.notes || "").trim().slice(0, 1000);
         if (!sipOrRepo) {
           return jsonResponse({ ok: false, error: "Please provide your SIP/WebRTC endpoint or GitHub handle." }, 400);
         }
-        if (env.DB) {
-          await ensureHcTables(env);
-          await env.DB.prepare(
-            `INSERT INTO hc_intake_submissions (order_ref, customer_email, sip_or_repo, notes)
-             VALUES (?1, ?2, ?3, ?4)`
-          )
-            .bind(orderRef, email, sipOrRepo, notes)
-            .run();
+        if (!orderRef && !email) {
+          return jsonResponse({ ok: false, error: "Please provide your B2B Order ID or checkout email." }, 400);
         }
+        if (!env.DB) return jsonResponse({ ok: false, error: "Database unavailable." }, 503);
+        await ensureHcTables(env);
+        const paidOrder = await env.DB.prepare(
+          `SELECT order_id, customer_email FROM hc_orders
+           WHERE status = 'completed'
+             AND ((?1 != '' AND (order_id = ?1 OR restore_token = ?1))
+               OR (?2 != '' AND LOWER(customer_email) = ?2))
+           LIMIT 1`
+        )
+          .bind(orderRef, email)
+          .first<{ order_id: string; customer_email: string }>();
+        if (!paidOrder) {
+          return jsonResponse(
+            { ok: false, error: "Active HardCall B2B order required to submit kickoff intake." },
+            403
+          );
+        }
+        await env.DB.prepare(
+          `INSERT INTO hc_intake_submissions (order_ref, customer_email, sip_or_repo, notes)
+           VALUES (?1, ?2, ?3, ?4)`
+        )
+          .bind(paidOrder.order_id, paidOrder.customer_email || email, sipOrRepo, notes)
+          .run();
         await sendHcEmail(env, {
           to: "hello@statementflow.win",
-          subject: `🚀 [HardCall Kickoff Intake] ${sipOrRepo.slice(0, 50)} (${email || orderRef})`,
-          text: `Order Ref: ${orderRef}\nCustomer Email: ${email}\nSIP / GitHub Target: ${sipOrRepo}\nNotes:\n${notes}`,
+          subject: `🚀 [HardCall Kickoff Intake] ${sipOrRepo.slice(0, 50)} (${paidOrder.customer_email || paidOrder.order_id})`,
+          text: `Verified Order: ${paidOrder.order_id}\nCustomer Email: ${paidOrder.customer_email || email}\nSIP / GitHub Target: ${sipOrRepo}\nNotes:\n${notes}`,
         });
         return jsonResponse({ ok: true });
       } catch {
@@ -587,7 +637,7 @@ const worker = {
           "    environment:",
           "      - RTP_START_PORT=16384",
           "      - RTP_END_PORT=16484",
-          "      -PTIME_MS=20",
+          "      - PTIME_MS=20",
           "  hardcall-rtp-orchestrator:",
           "    build: ./rtp-gateway",
           "    network_mode: host",
