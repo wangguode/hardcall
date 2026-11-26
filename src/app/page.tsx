@@ -256,6 +256,13 @@ export default function HomePage() {
       .then((data: { verified?: boolean; plan?: string } | null) => {
         if (data?.verified) {
           localStorage.setItem("hardcall_license_active", checkoutId);
+          localStorage.setItem("hardcall_license_plan", data.plan === "kit" ? "kit" : "audit");
+          try {
+            const w = window as Window & { lpConvert?: (ev: string, val: number) => void };
+            w.lpConvert?.("purchase", data.plan === "kit" ? 1200 : 299);
+          } catch {
+            // ignore
+          }
           setVerifiedNotice(
             isEn
               ? "Payment verified via Creem.io — Kickoff instructions sent to your inbox!"
@@ -1204,8 +1211,61 @@ export default function HomePage() {
           </p>
 
           {verifiedNotice && (
-            <div className="mt-8 p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-mono text-center">
-              ✓ {verifiedNotice}
+            <div className="mt-8 p-5 rounded-2xl bg-emerald-500/12 border border-emerald-500/40 text-left space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="text-emerald-300 text-xs font-mono font-bold">
+                  ✓ {verifiedNotice}
+                </div>
+                <a
+                  href={`/api/kit-bundle?ref=${encodeURIComponent(typeof window !== "undefined" ? localStorage.getItem("hardcall_license_active") || "" : "")}`}
+                  className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs"
+                >
+                  {isEn ? "Download RTP Kit Config Bundle (.json)" : "下载 8kHz RTP 配置授权包"}
+                </a>
+              </div>
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const fd = new FormData(e.currentTarget);
+                  const sipOrRepo = String(fd.get("sipOrRepo") || "").trim();
+                  if (!sipOrRepo) return;
+                  const formEl = e.currentTarget;
+                  await fetch("/api/b2b-intake", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      orderRef: typeof window !== "undefined" ? localStorage.getItem("hardcall_license_active") || "" : "",
+                      sipOrRepo,
+                      notes: String(fd.get("notes") || ""),
+                    }),
+                  }).catch(() => {});
+                  formEl.reset();
+                  setVerifiedNotice(
+                    isEn
+                      ? "Kickoff target received! Engineering audit / repo provisioning queued (<4h SLA)."
+                      : "对接参数已自动入库！将在 4 小时内启动压测或开通私有仓库权限。"
+                  );
+                }}
+                className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-1"
+              >
+                <input
+                  name="sipOrRepo"
+                  required
+                  placeholder={isEn ? "Paste SIP/WebRTC test URI or your GitHub username..." : "粘贴测试 SIP 号码 / WebRTC 地址或 GitHub 用户名..."}
+                  className="sm:col-span-5 rounded-xl border border-white/15 bg-black/50 px-3 py-2 text-xs text-white"
+                />
+                <input
+                  name="notes"
+                  placeholder={isEn ? "Current STT/LLM/TTS latency notes (optional)..." : "补充当前语音管线延迟现象（选填）..."}
+                  className="sm:col-span-5 rounded-xl border border-white/15 bg-black/50 px-3 py-2 text-xs text-white"
+                />
+                <button
+                  type="submit"
+                  className="sm:col-span-2 rounded-xl bg-white text-black font-bold text-xs py-2 cursor-pointer hover:bg-white/90"
+                >
+                  {isEn ? "Submit Kickoff" : "提交自动对接"}
+                </button>
+              </form>
             </div>
           )}
 

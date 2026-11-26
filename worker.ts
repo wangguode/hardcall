@@ -96,6 +96,29 @@ async function ensureHcTables(env: Env): Promise<void> {
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )`
     ).run();
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS email_outbox (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_label TEXT NOT NULL DEFAULT 'HardCall Voice Engineering',
+        to_email TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        body_text TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        attempts INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        sent_at TEXT NOT NULL DEFAULT ''
+      )`
+    ).run();
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS hc_intake_submissions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_ref TEXT NOT NULL DEFAULT '',
+        customer_email TEXT NOT NULL DEFAULT '',
+        sip_or_repo TEXT NOT NULL DEFAULT '',
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )`
+    ).run();
     hcSchemaReady = true;
   } catch {
     // ignore
@@ -145,30 +168,50 @@ async function sendHcEmail(
   env: Env,
   params: { to: string; subject: string; text: string }
 ): Promise<boolean> {
+  if (!params.to) return false;
   const apiKey = env.RESEND_API_KEY?.trim();
-  if (!apiKey || !params.to) return false;
-  const rawFrom =
-    env.RESEND_FROM_EMAIL?.trim() || "HardCall Voice Engineering <hello@mail.statementflow.win>";
-  const from = rawFrom.replace(/@statementflow\.win\b/i, "@mail.statementflow.win");
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        reply_to: "hello@statementflow.win",
-        to: [params.to],
-        subject: params.subject,
-        text: params.text,
-      }),
-    });
-    return res.ok;
-  } catch {
-    return false;
+  if (apiKey) {
+    const rawFrom =
+      env.RESEND_FROM_EMAIL?.trim() || "HardCall Voice Engineering <hello@mail.statementflow.win>";
+    const from = rawFrom.replace(/@statementflow\.win\b/i, "@mail.statementflow.win");
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from,
+          reply_to: "hello@statementflow.win",
+          to: [params.to],
+          subject: params.subject,
+          text: params.text,
+        }),
+      });
+      if (res.ok) return true;
+    } catch {
+      // fallback to shared D1 outbox
+    }
   }
+  if (env.DB) {
+    try {
+      await ensureHcTables(env);
+      await env.DB.prepare(
+        `INSERT INTO email_outbox (from_label, to_email, subject, body_text, status)
+         VALUES ('HardCall Voice Engineering', ?1, ?2, ?3, 'pending')`
+      )
+        .bind(params.to, params.subject, params.text)
+        .run();
+      fetch("https://pulse.statementflow.win/api/internal/flush-outbox", {
+        method: "POST",
+      }).catch(() => {});
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }
 
 async function handleCheckout(request: Request, env: Env): Promise<Response> {
@@ -316,6 +359,19 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
             "— Wang Guo, HardCall Voice Architecture",
           ].join("\n"),
         });
+
+        await sendHcEmail(env, {
+          to: "hello@statementflow.win",
+          subject: `💰 [HardCall B2B Paid] $${amountUsd} (${plan.toUpperCase()}) from ${email}`,
+          text: [
+            `New Paid B2B Engagement on HardCall!`,
+            `- Order ID: ${orderId}`,
+            `- Customer: ${email}`,
+            `- Tier: ${plan.toUpperCase()} ($${amountUsd})`,
+            `- Stack Note: ${stackNote || "None"}`,
+            `- Activation Link Sent: ${activateUrl}`,
+          ].join("\n"),
+        });
       }
     } catch {
       // ignore
@@ -458,6 +514,100 @@ const worker = {
 
     if (pathname === "/api/verify-checkout" && request.method === "GET") {
       return handleVerifyCheckout(request, env);
+    }
+
+    if (pathname === "/api/b2b-intake" && request.method === "POST") {
+      if (!checkRateLimit(request, "intake", 8)) {
+        return jsonResponse({ ok: false, error: "Too many submissions." }, 429);
+      }
+      try {
+        const body = (await request.json()) as {
+          orderRef?: string;
+          email?: string;
+          sipOrRepo?: string;
+          notes?: string;
+        };
+        const orderRef = (body.orderRef || "").trim().slice(0, 80);
+        const email = (body.email || "").trim().slice(0, 120);
+        const sipOrRepo = (body.sipOrRepo || "").trim().slice(0, 240);
+        const notes = (body.notes || "").trim().slice(0, 1000);
+        if (!sipOrRepo) {
+          return jsonResponse({ ok: false, error: "Please provide your SIP/WebRTC endpoint or GitHub handle." }, 400);
+        }
+        if (env.DB) {
+          await ensureHcTables(env);
+          await env.DB.prepare(
+            `INSERT INTO hc_intake_submissions (order_ref, customer_email, sip_or_repo, notes)
+             VALUES (?1, ?2, ?3, ?4)`
+          )
+            .bind(orderRef, email, sipOrRepo, notes)
+            .run();
+        }
+        await sendHcEmail(env, {
+          to: "hello@statementflow.win",
+          subject: `🚀 [HardCall Kickoff Intake] ${sipOrRepo.slice(0, 50)} (${email || orderRef})`,
+          text: `Order Ref: ${orderRef}\nCustomer Email: ${email}\nSIP / GitHub Target: ${sipOrRepo}\nNotes:\n${notes}`,
+        });
+        return jsonResponse({ ok: true });
+      } catch {
+        return jsonResponse({ ok: false }, 400);
+      }
+    }
+
+    if (pathname === "/api/kit-bundle" && request.method === "GET") {
+      if (!checkRateLimit(request, "kit_dl", 10)) {
+        return jsonResponse({ ok: false, error: "Too many attempts." }, 429);
+      }
+      if (!env.DB) return jsonResponse({ ok: false }, 503);
+      await ensureHcTables(env);
+      const ref = (new URL(request.url).searchParams.get("ref") || "").trim();
+      if (ref.length < 8) return jsonResponse({ ok: false, error: "Missing valid license reference." }, 401);
+      const row = await env.DB.prepare(
+        `SELECT order_id, customer_email, plan FROM hc_orders
+         WHERE (order_id = ?1 OR restore_token = ?1) AND status = 'completed' AND plan = 'kit' LIMIT 1`
+      )
+        .bind(ref)
+        .first<{ order_id: string; customer_email: string; plan: string }>();
+      if (!row) {
+        return jsonResponse({ ok: false, error: "Active $1,200 RTP Kit license required." }, 403);
+      }
+      const bundle = {
+        licenseCertificate: {
+          product: "HardCall 8kHz RTP Self-Hosted Commercial Deployment Kit",
+          orderId: row.order_id,
+          licensedTo: row.customer_email,
+          issuedAt: new Date().toISOString(),
+          sla: "Sub-60ms Barge-In · 0.16ms 256-Frame Ring Flush · SOXR VHQ 8kHz->16kHz",
+        },
+        dockerComposeYaml: [
+          "services:",
+          "  freeswitch-rtp:",
+          "    image: signalwire/freeswitch:1.10",
+          "    network_mode: host",
+          "    environment:",
+          "      - RTP_START_PORT=16384",
+          "      - RTP_END_PORT=16484",
+          "      -PTIME_MS=20",
+          "  hardcall-rtp-orchestrator:",
+          "    build: ./rtp-gateway",
+          "    network_mode: host",
+          "    environment:",
+          "      - RING_BUFFER_FRAMES=256",
+          "      - RESAMPLER_QUALITY=SOXR_VHQ",
+          "      - FAST_VAD_WINDOW_MS=50",
+          "      - SEMANTIC_GUARD_MS=200",
+        ].join("\n"),
+        repositoryAccessInstruction:
+          "Submit your GitHub username in the Verified Fulfillment Vault or reply to hello@statementflow.win for private repo collaborator invite + 2h onboarding call.",
+      };
+      return new Response(JSON.stringify(bundle, null, 2), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Disposition": `attachment; filename="hardcall-8khz-rtp-kit-${row.order_id}.json"`,
+          ...SECURITY_HEADERS,
+        },
+      });
     }
 
     if (pathname === "/api/license/restore" && request.method === "POST") {

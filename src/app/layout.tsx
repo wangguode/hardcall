@@ -108,6 +108,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(HARDCALL_JSON_LD) }}
         />
+        <script src="https://pulse.statementflow.win/api/pixel.js" defer />
       </head>
       <body className="antialiased bg-obsidian text-[#f5f5f7]">{children}</body>
     </html>
