@@ -36,7 +36,10 @@ function jsonResponse(payload: unknown, status = 200): Response {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
       "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "SAMEORIGIN",
       "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+      "Permissions-Policy": "camera=(), microphone=(self), geolocation=()",
     },
   });
 }
@@ -190,7 +193,7 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
       verified,
       status: data.status || "unknown",
       checkoutId: data.id,
-      plan: data.metadata?.plan || "weekly",
+      plan: data.metadata?.plan || "audit",
     });
   } catch {
     return jsonResponse({ verified: false, error: "Verification failed" }, 500);
