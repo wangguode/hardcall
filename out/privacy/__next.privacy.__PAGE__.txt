@@ -1,0 +1,52 @@
+1:"$Sreact.fragment"
+3:"/_next/static/chunks/3qfy96eoyh-ek.js"
+4:I[39756,["$3"],"default"]
+5:I[37457,["$3"],"default"]
+c:"/_next/static/chunks/3zt_16xndew4w.js"
+d:I[22016,["$3","$c"],""]
+15:"ViewportBoundary"
+16:I[97367,["$3"],"$15"]
+17:"MetadataBoundary"
+18:I[97367,["$3"],"$17"]
+19:"$Sreact.suspense"
+:HL["/_next/static/chunks/0ofor3h0xqbqu.css","style"]
+:HL["https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap","style"]
+2:T49f,[{"@context":"https://schema.org","@type":"SoftwareApplication","name":"HardCall 8kHz RTP Voice Barge-In Gateway","url":"https://hardcall.statementflow.win","applicationCategory":"DeveloperApplication","operatingSystem":"Linux, Docker, Web","description":"Sub-60ms PSTN/SIP full-duplex voice interruption architecture using FreeSWITCH, 8kHz raw RTP, SOXR VHQ lossless resampling, and 0.16ms ring-buffer teardown.","offers":[{"@type":"Offer","name":"Browser Barge-In Simulator","price":"0.00","priceCurrency":"USD"},{"@type":"Offer","name":"48h Voice Latency Audit Pilot","price":"299.00","priceCurrency":"USD"},{"@type":"Offer","name":"8kHz RTP Self-Hosted Deployment Kit","price":"1200.00","priceCurrency":"USD"}]},{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Why do standard WebSocket voice agents suffer from 900ms+ barge-in lag?","acceptedAnswer":{"@type":"Answer","text":"TCP head-of-line blocking, buffered TTS chunks, and linear 8kHz-to-16kHz resampling cause 850ms to 1,400ms trailing audio overlap on PSTN phone lines. HardCall uses raw UDP/RTP + 256-frame ring buffer flush (0.16ms) to achieve 52ms–60ms interruption."}}]}]7:X
+a:X
+a:C
+b:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$1","c",{"children":[["$","main",null,{"className":"min-h-screen bg-[#08080a] text-[#f5f5f7] py-16 px-4 sm:px-8","children":["$","div",null,{"className":"max-w-3xl mx-auto space-y-8 leading-relaxed","children":[["$","div",null,{"className":"space-y-2 border-b border-white/10 pb-6","children":[["$","$Ld",null,{"href":"/","className":"text-xs font-mono text-emerald-400 hover:underline","children":"← Back to HardCall"}],["$","h1",null,{"className":"text-3xl font-bold tracking-tight text-white","children":"Privacy Policy"}],["$","p",null,{"className":"text-sm text-[#a1a1a6]","children":"Effective Date: November 20, 2026 · Operator: Wang Guo (HardCall) · Website: https://hardcall.statementflow.win"}]]}],"$Le","$Lf","$L10","$L11"]}]}],["$L12"],"$L13"]}],"p":"$@14","v":null,"s":"$7"}}]]
+8:[["children",{"s":"privacy","h":96,"d":{"r":["$","$1","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@9","v":"$a","s":"$7"},"c":"$Qb"}]]
+0:{"t":{"t":{"s":"","h":80,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/0ofor3h0xqbqu.css","precedence":"next"}],["$","script","script-0",{"src":"/_next/static/chunks/3qfy96eoyh-ek.js","async":true}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}],["$","link",null,{"href":"https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap","rel":"stylesheet"}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"$2"}}]]}],["$","body",null,{"className":"antialiased bg-obsidian text-[#f5f5f7]","children":["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}],"notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]]}]}]]}]]}],"p":"$@6","v":null,"s":"$7"},"c":"$Q8"},"h":{"r":["$","$1","h",{"children":[null,["$","$L16",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L18",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$19",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"HardCall — 60ms 8kHz RTP Voice Barge-In Gateway & Open-Source Simulator"}],["$","meta","1",{"name":"description","content":"Sub-60ms PSTN/SIP telephony barge-in architecture (FreeSWITCH + 8kHz raw RTP + SOXR VHQ + 0.16ms ring-buffer flush). Test full-duplex voice interruption free in your browser or book a $299 48h latency audit."}],["$","meta","2",{"name":"robots","content":"index, follow"}],"$L1a","$L1b","$L1c","$L1d","$L1e","$L1f","$L20","$L21","$L22","$L23","$L24","$L25","$L26","$L27","$L28","$L29"]}]}],null]}],null]}],"p":"$@2a","v":null,"s":"$7"}},"a":"$@2b","u":"$@2c","b":"PircJDQkmaHTAhSXVM6ph"}
+2d:I[97367,["$3"],"OutletBoundary"]
+2f:I[27201,["$3"],"IconMark"]
+e:["$","section",null,{"className":"space-y-3 text-sm text-[#d1d1d6]","children":[["$","h2",null,{"className":"text-lg font-semibold text-white","children":"1. Information We Process"}],["$","p",null,{"children":"HardCall is an AI-powered voice interview drill simulator and coaching tool. When you run a voice drill session in your browser or native client, microphone audio and speech-to-text transcripts are processed ephemerally solely to evaluate pacing, filler words, barge-in interruption timing, and post-call coaching feedback."}],["$","p",null,{"children":"We do not sell personal data, rent user recordings, or permanently store raw voice audio on our servers."}]]}]
+f:["$","section",null,{"className":"space-y-3 text-sm text-[#d1d1d6]","children":[["$","h2",null,{"className":"text-lg font-semibold text-white","children":"2. Payment & Billing Data (Creem.io)"}],["$","p",null,{"children":["Commercial B2B engagements (Voice Latency Audit Pilot, 8kHz RTP Deployment Kit, and Custom Enterprise Integrations) may be invoiced directly or processed via our Merchant of Record,"," ",["$","strong",null,{"children":"Creem.io"}],". Credit card numbers, billing addresses, and tax invoices are collected and secured directly by Creem.io under their privacy and PCI-DSS compliance standards. HardCall receives only order status, plan tier, and customer email metadata via signed webhooks to fulfill your engagement."]}]]}]
+10:["$","section",null,{"className":"space-y-3 text-sm text-[#d1d1d6]","children":[["$","h2",null,{"className":"text-lg font-semibold text-white","children":"3. Local Storage & Telemetry"}],["$","p",null,{"children":"Session preferences, language selection, and local drill transcripts may be stored in your browser's localStorage for convenience. You may clear this data at any time through your browser settings."}]]}]
+11:["$","section",null,{"className":"space-y-3 text-sm text-[#d1d1d6]","children":[["$","h2",null,{"className":"text-lg font-semibold text-white","children":"4. Your Rights & Contact"}],["$","p",null,{"children":["You may request access, correction, or deletion of any account or order metadata associated with your email address at any time by contacting us at"," ",["$","a",null,{"href":"mailto:hello@statementflow.win","className":"text-emerald-400 underline","children":"hello@statementflow.win"}],"."]}]]}]
+12:["$","script","script-0",{"src":"/_next/static/chunks/3zt_16xndew4w.js","async":true}]
+13:["$","$L2d",null,{"children":["$","$19",null,{"name":"Next.MetadataOutlet","children":"$@2e"}]}]
+1a:["$","link","3",{"rel":"canonical","href":"https://hardcall.statementflow.win"}]
+1b:["$","meta","4",{"property":"og:title","content":"HardCall — 60ms 8kHz RTP Voice Gateway & Free Barge-In Simulator"}]
+1c:["$","meta","5",{"property":"og:description","content":"Eliminate 900ms+ WebSocket voice agent barge-in lag. Open-source browser simulator + enterprise 8kHz RTP / FreeSWITCH deployment kit."}]
+1d:["$","meta","6",{"property":"og:url","content":"https://hardcall.statementflow.win"}]
+1e:["$","meta","7",{"property":"og:site_name","content":"HardCall"}]
+1f:["$","meta","8",{"property":"og:image","content":"https://hardcall.statementflow.win/og-hardcall.png"}]
+20:["$","meta","9",{"property":"og:image:width","content":"1200"}]
+21:["$","meta","10",{"property":"og:image:height","content":"675"}]
+22:["$","meta","11",{"property":"og:image:alt","content":"HardCall — 52ms Full-Duplex Voice Barge-In Architecture"}]
+23:["$","meta","12",{"property":"og:type","content":"website"}]
+24:["$","meta","13",{"name":"twitter:card","content":"summary_large_image"}]
+25:["$","meta","14",{"name":"twitter:title","content":"HardCall — 60ms 8kHz RTP Voice Gateway & Barge-In Simulator"}]
+26:["$","meta","15",{"name":"twitter:description","content":"Sub-60ms PSTN/SIP barge-in architecture vs 900ms+ WebSocket lag. Free simulator + $299 48h latency audit."}]
+27:["$","meta","16",{"name":"twitter:image","content":"https://hardcall.statementflow.win/og-hardcall.png"}]
+28:["$","link","17",{"rel":"icon","href":"/icon.svg?icon.2_e1ntdxgbrj6.svg","sizes":"any","type":"image/svg+xml"}]
+29:["$","$L2f","18",{}]
+7:300
+2e:null
+2c:true
+7:C
+2b:0
+9:"$undefined"
+6:"$undefined"
+2a:"$undefined"
+14:"$undefined"

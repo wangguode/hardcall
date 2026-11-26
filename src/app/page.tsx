@@ -26,6 +26,10 @@ import {
   Layers,
   BarChart3,
   Server,
+  Loader2,
+  X,
+  RotateCcw,
+  CreditCard,
 } from "lucide-react";
 
 type DrillCategory = "behavioral" | "systemDesign" | "salaryNegotiation" | "presentationPitch";
@@ -197,19 +201,53 @@ export default function HomePage() {
   >([]);
   const [userCustomInput, setUserCustomInput] = useState("");
   const [verifiedNotice, setVerifiedNotice] = useState("");
+  const [b2bModalPlan, setB2bModalPlan] = useState<"audit" | "kit" | null>(null);
+  const [b2bEmail, setB2bEmail] = useState("");
+  const [b2bStackNote, setB2bStackNote] = useState("");
+  const [b2bLoading, setB2bLoading] = useState(false);
+  const [b2bError, setB2bError] = useState("");
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [restoreEmail, setRestoreEmail] = useState("");
+  const [restoreOrderRef, setRestoreOrderRef] = useState("");
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [restoreError, setRestoreError] = useState("");
 
-  // Creem 支付成功回跳时，向服务端 /api/verify-checkout 核验订单后再持久解锁
+  // Creem 支付成功回跳或点击邮件恢复链接（?restore_token=...）时，服务端核验并持久解锁
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = localStorage.getItem("hardcall_license_active");
     if (saved) {
       setVerifiedNotice(
         isEn
-          ? "HardCall Pro License Active (Verified via Creem.io)"
-          : "HardCall 专业版已激活（Creem 订单验证通过）"
+          ? "HardCall B2B Commercial Engagement Active (Verified via Creem.io)"
+          : "HardCall 企业商业授权已激活（Creem 订单验证通过）"
       );
     }
     const params = new URLSearchParams(window.location.search);
+    const restoreTok = params.get("restore_token")?.trim();
+    if (restoreTok) {
+      fetch("/api/license/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: restoreTok }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: { restored?: boolean; plan?: string; orderId?: string } | null) => {
+          if (d?.restored) {
+            localStorage.setItem("hardcall_license_active", d.orderId || restoreTok);
+            setVerifiedNotice(
+              isEn
+                ? `Verified ${d.plan === "kit" ? "$1,200 RTP Kit" : "$299 Latency Audit"} order (${d.orderId || ""})`
+                : `已核验激活订单（${d.orderId || ""}）`
+            );
+            params.delete("restore_token");
+            const qs = params.toString();
+            window.history.replaceState({}, "", qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+          }
+        })
+        .catch(() => {});
+      return;
+    }
     const checkoutId = params.get("checkout_id");
     if (params.get("checkout") !== "success" || !checkoutId) return;
 
@@ -220,8 +258,8 @@ export default function HomePage() {
           localStorage.setItem("hardcall_license_active", checkoutId);
           setVerifiedNotice(
             isEn
-              ? "Payment verified via Creem.io — HardCall full access unlocked!"
-              : "Creem 支付核验成功 — HardCall 完整权限已永久解锁！"
+              ? "Payment verified via Creem.io — Kickoff instructions sent to your inbox!"
+              : "Creem 支付核验成功 — 工程对接指引已发送至您的邮箱！"
           );
           params.delete("checkout");
           params.delete("checkout_id");
@@ -236,6 +274,83 @@ export default function HomePage() {
       })
       .catch(() => {});
   }, [isEn]);
+
+  const handleB2bCheckoutSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!b2bModalPlan) return;
+    setB2bLoading(true);
+    setB2bError("");
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: b2bModalPlan,
+          email: b2bEmail.trim(),
+          stackNote: b2bStackNote.trim(),
+        }),
+      });
+      const data = (await res.json()) as {
+        mode?: string;
+        checkoutUrl?: string;
+        contactEmail?: string;
+        error?: string;
+      };
+      if (res.ok && data.mode === "live_redirect" && data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+      if (data.mode === "concierge_invoice") {
+        const subj = encodeURIComponent(
+          b2bModalPlan === "kit"
+            ? "HardCall $1,200 8kHz RTP Deployment Kit Order"
+            : "HardCall $299 48h Voice Latency Audit Order"
+        );
+        const body = encodeURIComponent(
+          `Work Email: ${b2bEmail}\nVoice Stack: ${b2bStackNote || "SIP / WebRTC"}\nPlease send the commercial invoice & kickoff link.`
+        );
+        window.location.href = `mailto:${data.contactEmail || "hello@statementflow.win"}?subject=${subj}&body=${body}`;
+        return;
+      }
+      setB2bError(data.error || "Unable to start checkout. Please retry or email hello@statementflow.win.");
+    } catch {
+      setB2bError("Network error while connecting to Creem.io. Please retry.");
+    } finally {
+      setB2bLoading(false);
+    }
+  };
+
+  const handleRestoreOrderSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRestoreLoading(true);
+    setRestoreError("");
+    try {
+      const res = await fetch("/api/license/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: restoreEmail.trim(),
+          orderRef: restoreOrderRef.trim(),
+        }),
+      });
+      const data = (await res.json()) as { restored?: boolean; orderId?: string; plan?: string; error?: string };
+      if (!res.ok || !data.restored) {
+        setRestoreError(data.error || "Order not found. Check your checkout email and Creem Order ID.");
+        return;
+      }
+      localStorage.setItem("hardcall_license_active", data.orderId || "verified");
+      setVerifiedNotice(
+        isEn
+          ? `Order verified (${data.orderId}) — HardCall B2B engagement active.`
+          : `订单核验通过（${data.orderId}）— 企业服务已激活。`
+      );
+      setRestoreOpen(false);
+    } catch {
+      setRestoreError("Network error. Please retry.");
+    } finally {
+      setRestoreLoading(false);
+    }
+  };
 
   // Real-time Mic Recording State (Web Speech API)
   const [isRecording, setIsRecording] = useState(false);
@@ -411,77 +526,84 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#08080a] text-[#f5f5f7] selection:bg-[#0071e3] selection:text-white">
-      {/* 顶部导航栏 */}
-      <header className="sticky top-0 z-50 h-12 backdrop-blur-xl bg-[#08080a]/80 border-b border-white/10 px-4 sm:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <a href="#" className="flex items-center gap-2 font-semibold text-sm tracking-tight">
-            <span className="w-5 h-5 rounded-md bg-emerald-500 text-black flex items-center justify-center text-xs font-bold">
-              <Phone className="w-3 h-3 fill-current" />
-            </span>
-            <span className="font-bold">HardCall</span>
-          </a>
-          <nav className="hidden md:flex items-center gap-6 text-xs text-[#a1a1a6]">
-            <a href="#bank" className="hover:text-white transition-colors">
-              {isEn ? "Question Bank" : "结构化题库"}
+      {/* V8 悬浮光学暗曜石磨砂导航舱 */}
+      <div className="sticky top-3 z-50 px-3 sm:px-6">
+        <header className="hc-frosted-topbar mx-auto flex h-14 max-w-6xl items-center justify-between rounded-2xl px-4 sm:px-5">
+          <div className="flex items-center gap-6">
+            <a href="#" className="flex items-center gap-2.5 font-semibold text-[15px] tracking-tight">
+              <span className="w-7 h-7 rounded-[9px] bg-gradient-to-b from-emerald-400 to-emerald-600 text-black flex items-center justify-center text-xs font-bold shadow-sm">
+                <Phone className="w-3.5 h-3.5 fill-current" />
+              </span>
+              <span className="font-bold">HardCall</span>
             </a>
-            <a href="#simulator" className="hover:text-white transition-colors">
-              {isEn ? "Live Voice Simulator" : "语音对练实测"}
-            </a>
-            <a href="#presentation" className="hover:text-white transition-colors">
-              {isEn ? "Keynote & Pitch" : "演说路演专区"}
-            </a>
-            <a href="#architecture" className="hover:text-white transition-colors">
-              {isEn ? "RTP Gateway Hybrid" : "语音网关架构"}
-            </a>
-            <a href="#pricing" className="hover:text-white transition-colors">
-              {isEn ? "Pricing" : "价格"}
-            </a>
-          </nav>
-        </div>
+            <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-[#a1a1a6]">
+              <a href="#enterprise-b2b" className="hover:text-white transition-colors">
+                {isEn ? "60ms Audio Benchmark" : "60ms 声波对比"}
+              </a>
+              <a href="#simulator" className="hover:text-white transition-colors">
+                {isEn ? "Live Browser Simulator" : "浏览器免费实测"}
+              </a>
+              <a href="#architecture" className="hover:text-white transition-colors">
+                {isEn ? "8kHz RTP Gateway" : "8kHz RTP 网关架构"}
+              </a>
+              <a href="#pricing" className="hover:text-white transition-colors">
+                {isEn ? "B2B Pricing" : "企业方案"}
+              </a>
+            </nav>
+          </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setLang(isEn ? "zh" : "en")}
-            className="flex items-center gap-1 text-xs text-[#a1a1a6] hover:text-white px-2 py-1 rounded-md border border-white/10 cursor-pointer"
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span>{isEn ? "中文" : "EN"}</span>
-          </button>
-          <a
-            href="#pricing"
-            className="text-xs font-medium px-3.5 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-semibold transition-colors"
-          >
-            {isEn ? "Get Offer Pass" : "获取通行证"}
-          </a>
-        </div>
-      </header>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setRestoreOpen(true)}
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-[#c7c7cc] hover:text-white px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/[0.04] cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{isEn ? "Verify Order" : "订单核验"}</span>
+            </button>
+            <button
+              onClick={() => setLang(isEn ? "zh" : "en")}
+              className="flex items-center gap-1 text-xs text-[#c7c7cc] hover:text-white px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/[0.04] cursor-pointer"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>{isEn ? "中文" : "EN"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setB2bModalPlan("audit")}
+              className="text-xs px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-semibold transition-colors cursor-pointer"
+            >
+              {isEn ? "Book $299 Audit" : "预约 $299 压测"}
+            </button>
+          </div>
+        </header>
+      </div>
 
       {/* Hero 区域 */}
-      <section className="relative pt-12 sm:pt-16 pb-20 px-4 sm:px-8 border-b border-white/10 overflow-hidden">
+      <section className="hc-hero-aura relative pt-12 sm:pt-16 pb-20 px-4 sm:px-8 border-b border-white/10 overflow-hidden">
         <div className="max-w-4xl mx-auto text-center space-y-6">
-          <div className="inline-flex max-w-full items-center justify-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] sm:text-xs font-medium text-emerald-400">
+          <div className="inline-flex max-w-full items-center justify-center gap-1.5 px-3.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] sm:text-xs font-medium text-emerald-400 backdrop-blur-md">
             <Zap className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span className="truncate">
               {isEn
-                ? "Open-Source Barge-In Simulator · 8kHz RTP / FreeSWITCH B2B Architecture"
-                : "开源实时打断模拟器 · 8kHz RTP / FreeSWITCH 企业级语音网关架构"}
+                ? "52ms Full-Duplex Barge-In · Raw 8kHz RTP / FreeSWITCH Telephony Engine"
+                : "52ms 毫秒级语音打断 · 原始 8kHz RTP / FreeSWITCH 电信级语音网关"}
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-tight text-white">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-[1.06] text-white">
             {isEn ? (
               <>
-                <span className="block">ChatGPT is polite.</span>
+                <span className="block">WebSocket Voice AI lags.</span>
                 <span className="text-emerald-400 block mt-1">
-                  Real interviewers <br className="sm:hidden" />
-                  interrupt.
+                  Go 52ms full-duplex.
                 </span>
               </>
             ) : (
               <>
-                <span className="block">ChatGPT 太礼貌了。</span>
+                <span className="block">告别 900ms 抢话重叠。</span>
                 <span className="text-emerald-400 block mt-1">
-                  真正的面试官与评委，随时打断你。
+                  升级 52ms 电信级全双工打断。
                 </span>
               </>
             )}
@@ -489,25 +611,26 @@ export default function HomePage() {
 
           <p className="text-base sm:text-xl text-[#a1a1a6] max-w-2xl mx-auto leading-relaxed">
             {isEn
-              ? "Polite chatbots nod along to your fluff. Real FAANG interviewers and VC partners cut you off in 12 seconds when you ramble. HardCall trains your voice composure under 52ms real-time interruptions, with rich question banks for interviews & keynote speeches."
-              : "礼貌的 AI 对你的套话点头称赞；但现实中大厂面试官与投资人在你废话超过 15 秒时会毫不留情打断你。HardCall 带来高压语音全双工实战，覆盖行为面试、系统架构、薪资谈判与演讲路演全量题库。"}
+              ? "Standard WebSocket voice wrappers talk over callers for 900ms+ on PSTN phone lines. Test our zero-setup 52ms barge-in state machine free in your browser, or deploy our raw 8kHz RTP + SOXR VHQ telephony gateway."
+              : "常规 WebSocket 语音封装在真实电话线路上存在 900ms+ 尾音抢话与重采样失真。先在浏览器免费实测 52ms 打断状态机，再预约 $299 线上延迟体检或私有化部署 8kHz RTP 网关。"}
           </p>
 
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
-            <a
-              href="#enterprise-b2b"
-              className="px-6 py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"
+          <div className="pt-4 flex flex-wrap items-center justify-center gap-3.5">
+            <button
+              type="button"
+              onClick={() => setB2bModalPlan("audit")}
+              className="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm flex items-center gap-2 transition-transform active:scale-95 cursor-pointer shadow-lg shadow-emerald-500/15"
             >
               <Server className="w-4 h-4" />
-              <span>{isEn ? "Enterprise Voice Gateway ($3,000+)" : "企业私有化语音网关定制 ($3,000+)"}</span>
-            </a>
+              <span>{isEn ? "Book 48h Latency Audit · $299" : "预约 48h 语音延迟体检 · $299"}</span>
+            </button>
 
             <a
               href="#simulator"
-              className="px-6 py-3 rounded-full border border-white/20 hover:border-white/40 text-white font-medium text-sm flex items-center gap-2 transition-colors"
+              className="px-6 py-3 rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-white font-medium text-sm flex items-center gap-2 transition-colors backdrop-blur-md"
             >
               <Mic className="w-4 h-4 text-emerald-400" />
-              <span>{isEn ? "Try Free Browser Barge-In Simulator" : "免费体验浏览器端打断模拟器"}</span>
+              <span>{isEn ? "Try Free Browser Simulator" : "免费体验浏览器端打断模拟器"}</span>
             </a>
           </div>
 
@@ -1087,7 +1210,7 @@ export default function HomePage() {
           )}
 
           {/* B2B 实机性能对比基准 + 务实三阶企业语音网关交付清单 */}
-          <div id="enterprise-b2b" className="mt-12 p-6 sm:p-8 rounded-3xl bg-[#12141a] border border-white/10 space-y-8">
+          <div id="enterprise-b2b" className="hc-frosted-card mt-12 p-6 sm:p-8 rounded-3xl space-y-8 text-left">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-2 max-w-2xl">
                 <div className="text-xs font-mono font-bold text-emerald-400 uppercase">
@@ -1167,33 +1290,33 @@ export default function HomePage() {
                     <li>• Actionable patch plan (48h delivery)</li>
                   </ul>
                 </div>
-                <a
-                  href="https://www.creem.io/product/prod_3kasfDA37SLjb1Wxz5aBVB"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-center font-semibold text-xs transition-colors"
+                <button
+                  type="button"
+                  onClick={() => setB2bModalPlan("audit")}
+                  className="w-full py-2.5 rounded-xl bg-white/12 hover:bg-white/20 text-white text-center font-semibold text-xs transition-colors cursor-pointer"
                 >
                   {isEn ? "Book $299 Latency Audit (Instant Checkout)" : "立即下单 $299 架构体检（48h 交付）"}
-                </a>
+                </button>
               </div>
 
-              <div className="p-5 rounded-2xl bg-[#0a0c10] border border-emerald-500/40 flex flex-col justify-between space-y-4">
+              <div className="p-5 rounded-2xl bg-[#0a0c10]/90 border border-emerald-500/40 flex flex-col justify-between space-y-4">
                 <div className="space-y-2">
                   <div className="text-[11px] font-mono text-emerald-400 uppercase">Step 2 · Self-Hosted Kit</div>
                   <div className="text-lg font-bold text-white">$1,200 <span className="text-xs font-normal text-[#86868b]">license</span></div>
                   <div className="text-xs font-semibold text-white">{isEn ? "8kHz RTP Gateway Deployment Pack" : "8kHz RTP 网关源码与部署包"}</div>
                   <ul className="text-[11px] text-[#a1a1a6] space-y-1.5 pt-1">
                     <li>• Production FreeSWITCH + SOXR VHQ docker stack</li>
-                    <li>• 256-frame outbound ring buffer & 0.16ms flush</li>
+                    <li>• 256-frame outbound ring buffer &amp; 0.16ms flush</li>
                     <li>• Commercial license + 2h onboarding call</li>
                   </ul>
                 </div>
-                <a
-                  href="mailto:hello@statementflow.win?subject=HardCall%20%241200%20RTP%20Deployment%20Kit"
-                  className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-center font-bold text-xs transition-colors"
+                <button
+                  type="button"
+                  onClick={() => setB2bModalPlan("kit")}
+                  className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-center font-bold text-xs transition-colors cursor-pointer"
                 >
-                  {isEn ? "Get $1,200 Deployment Kit" : "获取 $1,200 私有化部署包"}
-                </a>
+                  {isEn ? "Buy $1,200 Deployment Kit (Instant Checkout)" : "立即购买 $1,200 私有化部署包"}
+                </button>
               </div>
 
               <div className="p-5 rounded-2xl bg-[#0a0c10] border border-white/10 flex flex-col justify-between space-y-4">
@@ -1251,11 +1374,177 @@ export default function HomePage() {
               <a href="/privacy" className="hover:text-white underline">Privacy Policy</a>
               <a href="/terms" className="hover:text-white underline">Terms of Use</a>
               <a href="/terms#acceptable-use" className="hover:text-white underline">Acceptable Use Policy</a>
+              <button type="button" onClick={() => setRestoreOpen(true)} className="hover:text-white underline cursor-pointer">
+                Verify B2B Order
+              </button>
               <a href="mailto:hello@statementflow.win" className="hover:text-white">Support</a>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* 光学暗曜石磨砂 B2B 即时结账弹窗（直连 Creem Live $299 / $1,200） */}
+      {b2bModalPlan && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="hc-frosted-modal w-full max-w-md rounded-2xl p-6 text-white space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-mono font-semibold text-emerald-400">
+                  <CreditCard className="w-3.5 h-3.5" />
+                  Creem.io Merchant of Record
+                </span>
+                <h3 className="mt-2 text-lg font-bold">
+                  {b2bModalPlan === "kit"
+                    ? isEn
+                      ? "8kHz RTP Self-Hosted Deployment Kit"
+                      : "8kHz RTP 私有化源码与部署包"
+                    : isEn
+                    ? "48h Voice Latency Audit & Benchmark"
+                    : "48h 语音打断延迟体检与压测"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setB2bModalPlan(null)}
+                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex items-baseline justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+              <div className="text-xs text-[#a1a1a6]">
+                {b2bModalPlan === "kit"
+                  ? "Commercial Docker stack + 2h onboarding call"
+                  : "Frame-level SIP/WebRTC profile + 48h patch plan"}
+              </div>
+              <div className="font-mono text-2xl font-bold text-emerald-400">
+                ${b2bModalPlan === "kit" ? "1,200" : "299"}
+              </div>
+            </div>
+
+            <form onSubmit={handleB2bCheckoutSubmit} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-[#d1d1d6] mb-1">
+                  {isEn ? "Work Email (for Kickoff & Tax Invoice)" : "企业邮箱（接收交付指引与税票）"}
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={b2bEmail}
+                  onChange={(e) => setB2bEmail(e.target.value)}
+                  placeholder="cto@voice-startup.ai"
+                  className="w-full rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-sm text-white focus:border-emerald-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#d1d1d6] mb-1">
+                  {isEn ? "Current Telephony / Voice Stack (Optional)" : "当前电话/语音技术栈（选填）"}
+                </label>
+                <input
+                  type="text"
+                  value={b2bStackNote}
+                  onChange={(e) => setB2bStackNote(e.target.value)}
+                  placeholder="e.g. Twilio SIP + Deepgram + Cartesia"
+                  className="w-full rounded-xl border border-white/15 bg-black/40 px-3.5 py-2 text-xs text-white focus:border-emerald-400 focus:outline-none"
+                />
+              </div>
+
+              {b2bError && (
+                <p className="rounded-xl bg-red-500/15 border border-red-500/30 px-3 py-2 text-xs text-red-300">
+                  {b2bError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={b2bLoading}
+                className="w-full min-h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              >
+                {b2bLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                <span>
+                  {b2bLoading
+                    ? "Redirecting to Secure Creem Checkout..."
+                    : `Proceed to Checkout · $${b2bModalPlan === "kit" ? "1,200" : "299"}`}
+                </span>
+              </button>
+
+              <p className="text-center text-[11px] text-[#86868b]">
+                Need a custom corporate PO / wire invoice instead?{" "}
+                <a
+                  href={`mailto:hello@statementflow.win?subject=HardCall%20B2B%20Invoice%20(${b2bModalPlan})`}
+                  className="text-emerald-400 underline"
+                >
+                  Email hello@statementflow.win
+                </a>
+              </p>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* B2B 订单跨设备核验弹窗 */}
+      {restoreOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="hc-frosted-modal w-full max-w-md rounded-2xl p-6 text-white space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold">
+                  {isEn ? "Verify Existing HardCall Order" : "核验已购 HardCall 企业订单"}
+                </h3>
+                <p className="text-xs text-[#a1a1a6] mt-1">
+                  {isEn
+                    ? "Enter your checkout email and Creem Order/Checkout ID to verify status."
+                    : "输入下单邮箱与 Creem 订单编号核验授权状态。"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRestoreOpen(false)}
+                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleRestoreOrderSubmit} className="space-y-3">
+              <input
+                type="email"
+                required
+                value={restoreEmail}
+                onChange={(e) => setRestoreEmail(e.target.value)}
+                placeholder="Work email used at checkout"
+                className="w-full rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-sm text-white"
+              />
+              <input
+                type="text"
+                required
+                minLength={6}
+                value={restoreOrderRef}
+                onChange={(e) => setRestoreOrderRef(e.target.value)}
+                placeholder="Creem Order / Checkout ID (e.g. ch_...)"
+                className="w-full rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-sm font-mono text-white"
+              />
+              {restoreError && <p className="text-xs text-red-400">{restoreError}</p>}
+              <button
+                type="submit"
+                disabled={restoreLoading}
+                className="w-full min-h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm cursor-pointer"
+              >
+                {restoreLoading ? "Verifying..." : "Verify Order"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

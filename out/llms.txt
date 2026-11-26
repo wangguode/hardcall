@@ -1,0 +1,16 @@
+# HardCall — 60ms 8kHz RTP Voice Barge-In Gateway & Simulator (https://hardcall.statementflow.win)
+
+> Production PSTN/SIP telephony voice agent architecture achieving <60ms barge-in cutoff using raw 8kHz RTP, FreeSWITCH, SOXR VHQ resampling, and a 256-frame outbound ring buffer (0.16ms flush), compared against 900ms+ WebSocket/TCP trailing audio overlap.
+
+## Interactive Demos
+- **Free Browser Full-Duplex Barge-In Simulator**: Test adversarial voice interruption cadence directly in the browser with zero signup.
+- **Interactive 52ms RTP vs 920ms WebSocket Audio Waveform Benchmark**: Hear and visualize real-time barge-in collision tails vs clean 52ms cutoff at https://hardcall.statementflow.win#enterprise-b2b.
+
+## Open-Source Telephony Engineering Lab
+- Python & Java runnable reference implementation: https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein
+
+## B2B Engineering Tiers
+- **$299 (48h Voice Latency Audit Pilot)**: Frame-level SIP/WebRTC barge-in diagnosis and patch plan (instant checkout via Creem.io).
+- **$1,200 (Self-Hosted 8kHz RTP Deployment Kit)**: Production FreeSWITCH + SOXR VHQ Docker stack + commercial license.
+- **$3,000+ (Custom Enterprise SIP Integration)**: Dedicated LLM/STT/TTS pipeline integration and load testing.
+- Contact: hello@statementflow.win

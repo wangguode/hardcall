@@ -5,8 +5,16 @@
   "compatibility_date": "2024-11-01",
   "assets": {
     "directory": "./out",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "launchpulse-db",
+      "database_id": "b087ef3a-0f4a-463c-975d-51a7f2fb6075"
+    }
+  ],
   "routes": [
     {
       "pattern": "hardcall.statementflow.win/*",

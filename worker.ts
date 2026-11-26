@@ -1,18 +1,35 @@
 /**
- * HardCall Cloudflare Workers 边缘入口：
- * 1. 处理 /api/checkout（调用 Creem.io Checkout API 生成实时美元结账链接）
- * 2. 处理 /api/webhook（校验 Creem Webhook HMAC-SHA256 签名）
- * 3. 其余静态资源交给 Cloudflare Assets 托管
+ * HardCall Cloudflare Workers 边缘入口（D1 订单持久化 + 边缘限流 + Resend 自动交付确认版）：
+ * 1. POST /api/checkout         — 调用 Creem.io Checkout API 生成实时美元结账链接（$299 Audit / $1,200 RTP Kit）
+ * 2. GET  /api/verify-checkout  — 服务端核验 Creem 结账单并幂等入库 D1 hc_orders
+ * 3. POST /api/webhook          — 校验 Creem HMAC-SHA256 签名、入库 D1 并自动发送工程启动邮件
+ * 4. POST /api/license/restore  — 跨设备订单核验与找回
+ * 5. GET  /api/stats & /api/health — 订单统计与健康探针
  */
+
+interface D1Prepared {
+  bind: (...args: unknown[]) => {
+    run: () => Promise<unknown>;
+    first: <T = Record<string, unknown>>() => Promise<T | null>;
+    all: <T = Record<string, unknown>>() => Promise<{ results?: T[] }>;
+  };
+  run: () => Promise<unknown>;
+  all: <T = Record<string, unknown>>() => Promise<{ results?: T[] }>;
+}
 
 interface Env {
   ASSETS: {
     fetch: (request: Request) => Promise<Response>;
   };
+  DB?: {
+    prepare: (sql: string) => D1Prepared;
+  };
   CREEM_API_KEY?: string;
   CREEM_PRODUCT_ID_AUDIT?: string;
   CREEM_PRODUCT_ID_KIT?: string;
   CREEM_WEBHOOK_SECRET?: string;
+  RESEND_API_KEY?: string;
+  RESEND_FROM_EMAIL?: string;
 }
 
 const PLAN_METADATA = {
@@ -30,16 +47,67 @@ const PLAN_METADATA = {
   },
 } as const;
 
+const SECURITY_HEADERS: Record<string, string> = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "SAMEORIGIN",
+  "Content-Security-Policy": "frame-ancestors 'self'",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+  "Permissions-Policy": "camera=(), microphone=(self), geolocation=()",
+};
+
+const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(request: Request, scope: string, maxPerMin: number): boolean {
+  const ip =
+    request.headers.get("cf-connecting-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "0.0.0.0";
+  const now = Date.now();
+  if (rateBuckets.size > 2000) {
+    for (const [k, v] of rateBuckets) {
+      if (v.resetAt <= now) rateBuckets.delete(k);
+    }
+  }
+  const key = `${scope}:${ip}`;
+  const entry = rateBuckets.get(key);
+  if (!entry || entry.resetAt <= now) {
+    rateBuckets.set(key, { count: 1, resetAt: now + 60_000 });
+    return true;
+  }
+  if (entry.count >= maxPerMin) return false;
+  entry.count += 1;
+  return true;
+}
+
+let hcSchemaReady = false;
+async function ensureHcTables(env: Env): Promise<void> {
+  if (hcSchemaReady || !env.DB) return;
+  try {
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS hc_orders (
+        order_id TEXT PRIMARY KEY,
+        customer_email TEXT NOT NULL DEFAULT '',
+        plan TEXT NOT NULL DEFAULT 'audit',
+        amount_usd INTEGER NOT NULL DEFAULT 299,
+        status TEXT NOT NULL DEFAULT 'completed',
+        restore_token TEXT NOT NULL DEFAULT '',
+        stack_note TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )`
+    ).run();
+    hcSchemaReady = true;
+  } catch {
+    // ignore
+  }
+}
+
 function jsonResponse(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      "X-Content-Type-Options": "nosniff",
-      "X-Frame-Options": "SAMEORIGIN",
-      "Referrer-Policy": "strict-origin-when-cross-origin",
-      "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
-      "Permissions-Policy": "camera=(), microphone=(self), geolocation=()",
+      ...SECURITY_HEADERS,
     },
   });
 }
@@ -73,11 +141,45 @@ async function verifyCreemSignature(
   return timingSafeEqualHex(signature.toLowerCase(), expectedHex);
 }
 
+async function sendHcEmail(
+  env: Env,
+  params: { to: string; subject: string; text: string }
+): Promise<boolean> {
+  const apiKey = env.RESEND_API_KEY?.trim();
+  if (!apiKey || !params.to) return false;
+  const rawFrom =
+    env.RESEND_FROM_EMAIL?.trim() || "HardCall Voice Engineering <hello@mail.statementflow.win>";
+  const from = rawFrom.replace(/@statementflow\.win\b/i, "@mail.statementflow.win");
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        reply_to: "hello@statementflow.win",
+        to: [params.to],
+        subject: params.subject,
+        text: params.text,
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function handleCheckout(request: Request, env: Env): Promise<Response> {
+  if (!checkRateLimit(request, "checkout", 15)) {
+    return jsonResponse({ error: "Too many checkout requests. Please wait 60s." }, 429);
+  }
   try {
     const body = (await request.json()) as {
       plan?: string;
       email?: string;
+      stackNote?: string;
     };
     const plan: keyof typeof PLAN_METADATA =
       body.plan === "kit"
@@ -85,7 +187,8 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
         : body.plan === "enterprise"
         ? "enterprise"
         : "audit";
-    const customerEmail = body.email?.trim() || "";
+    const customerEmail = (body.email || "").trim().toLowerCase();
+    const stackNote = (body.stackNote || "").trim().slice(0, 180);
     const meta = PLAN_METADATA[plan];
     const origin = request.headers.get("origin") || new URL(request.url).origin;
 
@@ -102,7 +205,7 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
         product_id: productId,
         success_url: `${origin}/?checkout=success&plan=${plan}`,
         request_id: `hc_${plan}_${Date.now()}`,
-        metadata: { plan },
+        metadata: { plan, stackNote },
       };
       if (customerEmail) {
         creemPayload.customer = { email: customerEmail };
@@ -156,10 +259,69 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
     return jsonResponse({ error: "Invalid webhook signature" }, 401);
   }
 
-  const event = JSON.parse(rawBody) as { eventType?: string; id?: string };
-  console.info(
-    `[hardcall/webhook/creem] verified event=${event.eventType || "unknown"} id=${event.id || "n/a"}`
-  );
+  const event = JSON.parse(rawBody) as {
+    eventType?: string;
+    id?: string;
+    object?: {
+      id?: string;
+      customer?: { email?: string };
+      metadata?: { plan?: string; stackNote?: string };
+      order?: { amount?: number };
+    };
+  };
+
+  if (env.DB) {
+    await ensureHcTables(env);
+    try {
+      const obj = event.object || {};
+      const orderId = obj.id || event.id || `hc_ord_${Date.now()}`;
+      const email = (obj.customer?.email || "").trim().toLowerCase();
+      const plan = obj.metadata?.plan === "kit" ? "kit" : "audit";
+      const stackNote = (obj.metadata?.stackNote || "").slice(0, 180);
+      const fallbackCents = plan === "kit" ? 120000 : 29900;
+      const amountUsd = Math.round((obj.order?.amount || fallbackCents) / 100);
+      const evt = (event.eventType || "").toLowerCase();
+      const status = /refund|cancel|dispute/.test(evt) ? "refunded" : "completed";
+      const restoreToken = `hc_lic_${crypto.randomUUID().replace(/-/g, "")}`;
+
+      await env.DB.prepare(
+        `INSERT INTO hc_orders (order_id, customer_email, plan, amount_usd, status, restore_token, stack_note)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+         ON CONFLICT(order_id) DO UPDATE SET status = ?5`
+      )
+        .bind(orderId, email, plan, amountUsd, status, restoreToken, stackNote)
+        .run();
+
+      if (status === "completed" && email) {
+        const activateUrl = `https://hardcall.statementflow.win/?restore_token=${encodeURIComponent(restoreToken)}`;
+        await sendHcEmail(env, {
+          to: email,
+          subject:
+            plan === "kit"
+              ? "HardCall 8kHz RTP Self-Hosted Deployment Kit ($1,200) — Onboarding & Access"
+              : "HardCall 48h Voice Latency Audit ($299) — Kickoff Instructions",
+          text: [
+            "Welcome to HardCall B2B Voice Engineering!",
+            "",
+            `Engagement Confirmed: ${plan === "kit" ? "8kHz RTP Self-Hosted Deployment Kit ($1,200)" : "48h Voice Latency Audit & Benchmark ($299)"}`,
+            `Order ID: ${orderId}`,
+            "",
+            "Next Steps (Kickoff within 4 hours):",
+            plan === "kit"
+              ? "Reply directly to this email (hello@statementflow.win) with your GitHub handle and preferred FreeSWITCH/SIP environment so we can provision your commercial Docker bundle and schedule your 2-hour onboarding call."
+              : "Reply directly to this email (hello@statementflow.win) with a test SIP/WebRTC endpoint or a 60-second call recording + current STT/LLM/TTS stack. Your frame-level barge-in latency report will be delivered within 48 hours.",
+            "",
+            `License Verification Link: ${activateUrl}`,
+            "",
+            "— Wang Guo, HardCall Voice Architecture",
+          ].join("\n"),
+        });
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   return jsonResponse({
     received: true,
     provider: "creem",
@@ -168,6 +330,9 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
 }
 
 async function handleVerifyCheckout(request: Request, env: Env): Promise<Response> {
+  if (!checkRateLimit(request, "verify", 20)) {
+    return jsonResponse({ verified: false, error: "Too many attempts." }, 429);
+  }
   const checkoutId = new URL(request.url).searchParams.get("checkout_id")?.trim();
   const creemApiKey = env.CREEM_API_KEY?.trim();
 
@@ -186,23 +351,106 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
     const data = (await res.json()) as {
       id?: string;
       status?: string;
-      metadata?: { plan?: string };
+      customer?: { email?: string };
+      metadata?: { plan?: string; stackNote?: string };
     };
     const verified = data.status === "completed";
+    const plan = data.metadata?.plan === "kit" ? "kit" : "audit";
+    const email = (data.customer?.email || "").trim().toLowerCase();
+    if (verified && env.DB && data.id) {
+      await ensureHcTables(env);
+      try {
+        const tok = `hc_lic_${crypto.randomUUID().replace(/-/g, "")}`;
+        await env.DB.prepare(
+          `INSERT INTO hc_orders (order_id, customer_email, plan, amount_usd, status, restore_token, stack_note)
+           VALUES (?1, ?2, ?3, ?4, 'completed', ?5, ?6)
+           ON CONFLICT(order_id) DO NOTHING`
+        )
+          .bind(
+            data.id,
+            email,
+            plan,
+            plan === "kit" ? 1200 : 299,
+            tok,
+            (data.metadata?.stackNote || "").slice(0, 180)
+          )
+          .run();
+      } catch {
+        // ignore
+      }
+    }
     return jsonResponse({
       verified,
       status: data.status || "unknown",
       checkoutId: data.id,
-      plan: data.metadata?.plan || "audit",
+      plan,
+      email,
     });
   } catch {
     return jsonResponse({ verified: false, error: "Verification failed" }, 500);
   }
 }
 
+async function handleRestoreOrder(request: Request, env: Env): Promise<Response> {
+  if (!checkRateLimit(request, "restore", 12)) {
+    return jsonResponse({ ok: false, error: "Too many attempts. Wait 60s." }, 429);
+  }
+  if (!env.DB) return jsonResponse({ ok: false, error: "DB unavailable" }, 503);
+  await ensureHcTables(env);
+  try {
+    const body = (await request.json()) as { token?: string; email?: string; orderRef?: string };
+    const token = (body.token || "").trim();
+    const email = (body.email || "").trim().toLowerCase();
+    const orderRef = (body.orderRef || "").trim();
+
+    if (token && token.length >= 10) {
+      const row = await env.DB.prepare(
+        `SELECT order_id, customer_email, plan FROM hc_orders WHERE restore_token = ?1 AND status = 'completed' LIMIT 1`
+      )
+        .bind(token)
+        .first<{ order_id: string; customer_email: string; plan: string }>();
+      if (!row) return jsonResponse({ ok: false, error: "Invalid activation token." }, 404);
+      return jsonResponse({ ok: true, restored: true, plan: row.plan, email: row.customer_email, orderId: row.order_id });
+    }
+
+    if (email && email.includes("@") && orderRef.length >= 6) {
+      const rows = await env.DB.prepare(
+        `SELECT order_id, customer_email, plan FROM hc_orders WHERE customer_email = ?1 AND status = 'completed'`
+      )
+        .bind(email)
+        .all<{ order_id: string; customer_email: string; plan: string }>();
+      const matched = (rows.results || []).find((r) =>
+        r.order_id.toLowerCase().includes(orderRef.toLowerCase())
+      );
+      if (!matched) {
+        return jsonResponse({ ok: false, error: "No matching active order found." }, 404);
+      }
+      return jsonResponse({ ok: true, restored: true, plan: matched.plan, email: matched.customer_email, orderId: matched.order_id });
+    }
+
+    return jsonResponse({ ok: false, error: "Enter both your checkout email and Order/Checkout ID." }, 400);
+  } catch {
+    return jsonResponse({ ok: false, error: "Invalid request." }, 400);
+  }
+}
+
 const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
+
+    if (pathname === "/api/health" && request.method === "GET") {
+      return jsonResponse({ ok: true, service: "hardcall" });
+    }
+
+    if (pathname === "/api/stats" && request.method === "GET") {
+      if (!env.DB) return jsonResponse({ ok: false }, 503);
+      await ensureHcTables(env);
+      const ordersRes = await env.DB.prepare(
+        `SELECT plan, COUNT(*) AS orders, COALESCE(SUM(amount_usd), 0) AS revenue_usd
+         FROM hc_orders WHERE status = 'completed' GROUP BY plan`
+      ).all();
+      return jsonResponse({ ok: true, orders: ordersRes.results || [] });
+    }
 
     if (pathname === "/api/checkout" && request.method === "POST") {
       return handleCheckout(request, env);
@@ -212,11 +460,20 @@ const worker = {
       return handleVerifyCheckout(request, env);
     }
 
+    if (pathname === "/api/license/restore" && request.method === "POST") {
+      return handleRestoreOrder(request, env);
+    }
+
     if (pathname === "/api/webhook" && request.method === "POST") {
       return handleWebhook(request, env);
     }
 
-    return env.ASSETS.fetch(request);
+    const assetRes = await env.ASSETS.fetch(request);
+    const hdrs = new Headers(assetRes.headers);
+    for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+      if (!hdrs.has(k)) hdrs.set(k, v);
+    }
+    return new Response(assetRes.body, { status: assetRes.status, headers: hdrs });
   },
 };
 

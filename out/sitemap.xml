@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+<loc>https://hardcall.statementflow.win</loc>
+<lastmod>2026-11-26T02:32:48.998Z</lastmod>
+<changefreq>weekly</changefreq>
+<priority>1</priority>
+</url>
+<url>
+<loc>https://hardcall.statementflow.win/privacy</loc>
+<lastmod>2026-11-26T02:32:48.998Z</lastmod>
+<changefreq>monthly</changefreq>
+<priority>0.4</priority>
+</url>
+<url>
+<loc>https://hardcall.statementflow.win/terms</loc>
+<lastmod>2026-11-26T02:32:48.998Z</lastmod>
+<changefreq>monthly</changefreq>
+<priority>0.4</priority>
+</url>
+</urlset>
