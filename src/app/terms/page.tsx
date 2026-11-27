@@ -1,4 +1,21 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Commercial Terms of Service & SLA | HardCall RTP",
+  description:
+    "B2B commercial terms, >=40% barge-in latency reduction refund SLA, $299-to-$1,200 credit policy, and acceptable telephony use policy for HardCall.",
+  alternates: {
+    canonical: "/terms",
+  },
+  openGraph: {
+    title: "Commercial Terms of Service & SLA | HardCall RTP",
+    description:
+      "Commercial VPC licensing, 48h latency audit refund SLA, and acceptable telephony use policy.",
+    url: "/terms",
+    type: "website",
+  },
+};
 
 export default function TermsOfUsePage() {
   return (

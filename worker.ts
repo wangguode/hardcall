@@ -119,6 +119,13 @@ async function ensureHcTables(env: Env): Promise<void> {
   } catch {
     // 列已存在时安全忽略
   }
+  try {
+    await env.DB.prepare(
+      `ALTER TABLE hc_orders ADD COLUMN claimed_at TEXT NOT NULL DEFAULT ''`
+    ).run();
+  } catch {
+    // 列已存在时安全忽略
+  }
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS email_outbox (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -184,6 +191,21 @@ function resolveSafeOrigin(request: Request): string {
     return urlOrigin;
   }
   return "https://hardcall.statementflow.win";
+}
+
+async function timingSafeEqualSecret(a: string, b: string): Promise<boolean> {
+  const enc = new TextEncoder();
+  const [ha, hb] = await Promise.all([
+    crypto.subtle.digest("SHA-256", enc.encode(a)),
+    crypto.subtle.digest("SHA-256", enc.encode(b)),
+  ]);
+  const ua = new Uint8Array(ha);
+  const ub = new Uint8Array(hb);
+  let diff = 0;
+  for (let i = 0; i < ua.length; i += 1) {
+    diff |= ua[i] ^ ub[i];
+  }
+  return diff === 0;
 }
 
 function timingSafeEqualHex(a: string, b: string): boolean {
@@ -621,14 +643,7 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
   }
 
   try {
-    const res = await fetch(
-      `https://api.creem.io/v1/checkouts?checkout_id=${encodeURIComponent(checkoutId)}`,
-      { headers: { "x-api-key": creemApiKey } }
-    );
-    if (!res.ok) {
-      return jsonResponse({ verified: false, status: "unverified" }, 402);
-    }
-    const data = (await res.json()) as {
+    type HcCreemCheckout = {
       id?: string;
       status?: string;
       customer?: { email?: string } | string;
@@ -639,6 +654,23 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
       order_id?: string;
       metadata?: { plan?: string; stackNote?: string };
     };
+    const fetchOnce = async (): Promise<HcCreemCheckout | null> => {
+      const r = await fetch(
+        `https://api.creem.io/v1/checkouts?checkout_id=${encodeURIComponent(checkoutId)}`,
+        { headers: { "x-api-key": creemApiKey } }
+      );
+      if (!r.ok) return null;
+      return (await r.json()) as HcCreemCheckout;
+    };
+    let data = await fetchOnce();
+    if (!data) {
+      return jsonResponse({ verified: false, status: "unverified" }, 402);
+    }
+    if (data.status !== "completed") {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const retried = await fetchOnce();
+      if (retried) data = retried;
+    }
 
     const verified = data.status === "completed";
     // 仅当 data.customer 是对象时提取 customer.email，兼容 Creem 返回字符串 customer ID 的场景
@@ -694,7 +726,7 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
         .run();
 
       const saved = await env.DB.prepare(
-        `SELECT restore_token, customer_email, order_ref, plan, amount_usd, stack_note, email_sent
+        `SELECT restore_token, customer_email, order_ref, plan, amount_usd, stack_note, email_sent, claimed_at
          FROM hc_orders WHERE order_id = ?1 LIMIT 1`
       )
         .bind(data.id)
@@ -706,9 +738,22 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
           amount_usd: number;
           stack_note: string;
           email_sent: number;
+          claimed_at?: string;
         }>();
 
-      restoreToken = saved?.restore_token || tok;
+      const actualTok = saved?.restore_token || tok;
+      const claimedAtStr = saved?.claimed_at || "";
+      const withinFreshClaim =
+        !claimedAtStr ||
+        Date.now() - new Date(claimedAtStr.replace(" ", "T") + "Z").getTime() < 15 * 60_000;
+      if (withinFreshClaim) {
+        restoreToken = actualTok;
+        if (!claimedAtStr) {
+          await env.DB.prepare(`UPDATE hc_orders SET claimed_at = datetime('now') WHERE order_id = ?1`)
+            .bind(data.id)
+            .run();
+        }
+      }
       finalPlan = saved?.plan === "kit" ? "kit" : finalPlan;
       finalEmail = saved?.customer_email || email;
       finalOrderRef = saved?.order_ref || orderRef;
@@ -721,7 +766,7 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
           email: finalEmail,
           plan: finalPlan,
           amountUsd: saved?.amount_usd || (finalPlan === "kit" ? 1200 : 299),
-          restoreToken,
+          restoreToken: actualTok,
           stackNote: saved?.stack_note || stackNote,
         });
         if (sentOk) {
@@ -736,9 +781,9 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
       verified,
       status: data.status || "unknown",
       checkoutId: data.id,
-      orderRef: finalOrderRef,
+      orderRef: restoreToken ? finalOrderRef : "",
       plan: finalPlan,
-      email: finalEmail,
+      email: restoreToken ? finalEmail : "",
       restoreToken,
     });
   } catch {
@@ -758,11 +803,11 @@ async function handleRestoreLicense(request: Request, env: Env): Promise<Respons
     const email = (body.email || "").trim().toLowerCase();
     const orderRef = (body.orderRef || "").trim();
 
-    if (token && token.length >= 8) {
+    if (token && token.length >= 12) {
       const row = await env.DB.prepare(
         `SELECT order_id, order_ref, restore_token, customer_email, plan
          FROM hc_orders
-         WHERE (restore_token = ?1 OR order_id = ?1 OR order_ref = ?1)
+         WHERE restore_token = ?1
            AND status = 'completed'
          LIMIT 1`
       )
@@ -786,7 +831,17 @@ async function handleRestoreLicense(request: Request, env: Env): Promise<Respons
       });
     }
 
-    if (email && email.includes("@") && orderRef.length >= 6) {
+    // 路径 2：凭购买邮箱 + 完整订单号/结账单号精确匹配（彻底移除 .includes 子串模糊枚举漏洞）
+    if (email && email.includes("@") && orderRef.length > 0) {
+      if (orderRef.length < 12) {
+        return jsonResponse(
+          {
+            ok: false,
+            error: "Please enter the full Order/Checkout ID (or leave it blank to receive an instant email activation link).",
+          },
+          400
+        );
+      }
       const rows = await env.DB.prepare(
         `SELECT order_id, order_ref, restore_token, customer_email, plan
          FROM hc_orders
@@ -803,15 +858,22 @@ async function handleRestoreLicense(request: Request, env: Env): Promise<Respons
       const needle = orderRef.toLowerCase();
       const matched = (rows.results || []).find(
         (r) =>
-          r.order_id.toLowerCase().includes(needle) ||
-          (r.order_ref && r.order_ref.toLowerCase().includes(needle)) ||
+          r.order_id.toLowerCase() === needle ||
+          (r.order_ref && r.order_ref.toLowerCase() === needle) ||
           (r.restore_token && r.restore_token.toLowerCase() === needle)
       );
       if (!matched) {
         return jsonResponse(
-          { ok: false, error: "No matching active order found for this email and Order/Checkout ID." },
+          { ok: false, error: "No matching active order found for this email and full Order/Checkout ID." },
           404
         );
+      }
+      let issuedTok = matched.restore_token;
+      if (!issuedTok) {
+        issuedTok = `hc_lic_${crypto.randomUUID().replace(/-/g, "")}`;
+        await env.DB.prepare(`UPDATE hc_orders SET restore_token = ?1 WHERE order_id = ?2`)
+          .bind(issuedTok, matched.order_id)
+          .run();
       }
       return jsonResponse({
         ok: true,
@@ -820,12 +882,53 @@ async function handleRestoreLicense(request: Request, env: Env): Promise<Respons
         email: matched.customer_email,
         orderId: matched.order_id,
         orderRef: matched.order_ref,
-        restoreToken: matched.restore_token,
+        restoreToken: issuedTok,
+      });
+    }
+
+    // 路径 3：仅提供结账邮箱 -> 向客户收件箱发送免密恢复链接，不在响应中泄露任何 Token
+    if (email && email.includes("@")) {
+      const existing = await env.DB.prepare(
+        `SELECT order_id, plan, restore_token FROM hc_orders
+         WHERE LOWER(customer_email) = ?1 AND status = 'completed'
+         ORDER BY created_at DESC LIMIT 1`
+      )
+        .bind(email)
+        .first<{ order_id: string; plan: string; restore_token: string }>();
+      if (existing) {
+        let tok = existing.restore_token;
+        if (!tok) {
+          tok = `hc_lic_${crypto.randomUUID().replace(/-/g, "")}`;
+          await env.DB.prepare(`UPDATE hc_orders SET restore_token = ?1 WHERE order_id = ?2`)
+            .bind(tok, existing.order_id)
+            .run();
+        }
+        const activateUrl = `https://hardcall.statementflow.win/?restore_token=${encodeURIComponent(tok)}#pricing`;
+        await sendHcEmail(env, {
+          to: email,
+          subject: "Your HardCall B2B Order Instant Restore Link",
+          text: [
+            "Click below to verify and unlock your HardCall B2B order on this device:",
+            "",
+            activateUrl,
+            "",
+            `Order Reference: ${existing.order_id}`,
+            "",
+            "— HardCall Voice Engineering (hello@statementflow.win)",
+          ].join("\n"),
+        });
+      }
+      return jsonResponse({
+        ok: true,
+        restored: false,
+        magicLinkSent: true,
+        message:
+          "If an active B2B order exists for this email, we just sent a 1-click verification link to your inbox.",
       });
     }
 
     return jsonResponse(
-      { ok: false, error: "Enter both your checkout email and Creem Order/Checkout ID (ord_... or ch_...)." },
+      { ok: false, error: "Please enter your checkout work email." },
       400
     );
   } catch {
@@ -1123,23 +1226,30 @@ const worker = {
     }
 
     if (pathname === "/api/stats" && request.method === "GET") {
+      if (!checkRateLimit(request, "admin_stats", 15)) {
+        return jsonResponse({ error: "Too many requests" }, 429);
+      }
       const adminKey = env.ADMIN_API_KEY?.trim() || "";
       const provided = (request.headers.get("x-admin-key") || "").trim();
-      if (!adminKey || !provided || !timingSafeEqualHex(provided, adminKey)) {
+      if (!adminKey || !provided || !(await timingSafeEqualSecret(provided, adminKey))) {
         return jsonResponse({ error: "Unauthorized" }, 401);
       }
       if (!env.DB) return jsonResponse({ ok: false }, 503);
-      await ensureHcTables(env);
-      const [ordersRes, leadsRes] = await Promise.all([
-        env.DB.prepare(
-          `SELECT plan, COUNT(*) AS orders, COALESCE(SUM(amount_usd), 0) AS revenue_usd
-           FROM hc_orders WHERE status = 'completed' GROUP BY plan`
-        ).all(),
-        env.DB.prepare(
-          `SELECT id, work_email, voice_stack, country, created_at FROM hc_leads ORDER BY id DESC LIMIT 25`
-        ).all(),
-      ]);
-      return jsonResponse({ ok: true, orders: ordersRes.results || [], leads: leadsRes.results || [] });
+      try {
+        await ensureHcTables(env);
+        const [ordersRes, leadsRes] = await Promise.all([
+          env.DB.prepare(
+            `SELECT plan, COUNT(*) AS orders, COALESCE(SUM(amount_usd), 0) AS revenue_usd
+             FROM hc_orders WHERE status = 'completed' GROUP BY plan`
+          ).all(),
+          env.DB.prepare(
+            `SELECT id, work_email, voice_stack, country, created_at FROM hc_leads ORDER BY id DESC LIMIT 25`
+          ).all(),
+        ]);
+        return jsonResponse({ ok: true, orders: ordersRes.results || [], leads: leadsRes.results || [] });
+      } catch {
+        return jsonResponse({ ok: false, error: "Stats query failed" }, 500);
+      }
     }
 
     if (pathname === "/api/lead-capture" && request.method === "POST") {
@@ -1266,19 +1376,21 @@ const worker = {
         if (!sipOrRepo) {
           return jsonResponse({ ok: false, error: "Please provide your SIP/WebRTC endpoint or GitHub handle." }, 400);
         }
-        if (!orderRef && !email) {
-          return jsonResponse({ ok: false, error: "Please provide your B2B Order ID or checkout email." }, 400);
+        if (!orderRef || orderRef.length < 12) {
+          return jsonResponse(
+            { ok: false, error: "Valid verified license token or full Order ID is required." },
+            401
+          );
         }
         if (!env.DB) return jsonResponse({ ok: false, error: "Database unavailable." }, 503);
         await ensureHcTables(env);
         const paidOrder = await env.DB.prepare(
           `SELECT order_id, order_ref, customer_email, plan FROM hc_orders
            WHERE status = 'completed'
-             AND ((?1 != '' AND (order_id = ?1 OR order_ref = ?1 OR restore_token = ?1))
-               OR (?2 != '' AND LOWER(customer_email) = ?2))
+             AND (restore_token = ?1 OR order_id = ?1 OR order_ref = ?1)
            LIMIT 1`
         )
-          .bind(orderRef, email)
+          .bind(orderRef)
           .first<{ order_id: string; order_ref: string; customer_email: string; plan: string }>();
         if (!paidOrder) {
           return jsonResponse(
@@ -1308,35 +1420,39 @@ const worker = {
         return jsonResponse({ ok: false, error: "Too many attempts." }, 429);
       }
       if (!env.DB) return jsonResponse({ ok: false }, 503);
-      await ensureHcTables(env);
-      const ref = (new URL(request.url).searchParams.get("ref") || "").trim();
-      if (ref.length < 6) {
-        return jsonResponse({ ok: false, error: "Missing valid license reference." }, 401);
+      try {
+        await ensureHcTables(env);
+        const ref = (new URL(request.url).searchParams.get("ref") || "").trim();
+        if (ref.length < 12) {
+          return jsonResponse({ ok: false, error: "Missing valid license token." }, 401);
+        }
+        const row = await env.DB.prepare(
+          `SELECT order_id, order_ref, customer_email, plan FROM hc_orders
+           WHERE restore_token = ?1
+             AND status = 'completed'
+             AND plan = 'kit'
+           LIMIT 1`
+        )
+          .bind(ref)
+          .first<{ order_id: string; order_ref: string; customer_email: string; plan: string }>();
+        if (!row) {
+          return jsonResponse(
+            { ok: false, error: "Active $1,200 Self-Hosted RTP Deployment Kit license token required." },
+            403
+          );
+        }
+        const bundle = buildProductionKitBundle(row);
+        return new Response(JSON.stringify(bundle, null, 2), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Content-Disposition": `attachment; filename="hardcall-8khz-rtp-kit-${row.order_id}.json"`,
+            ...SECURITY_HEADERS,
+          },
+        });
+      } catch {
+        return jsonResponse({ ok: false, error: "Unable to generate kit bundle right now." }, 500);
       }
-      const row = await env.DB.prepare(
-        `SELECT order_id, order_ref, customer_email, plan FROM hc_orders
-         WHERE (order_id = ?1 OR order_ref = ?1 OR restore_token = ?1)
-           AND status = 'completed'
-           AND plan = 'kit'
-         LIMIT 1`
-      )
-        .bind(ref)
-        .first<{ order_id: string; order_ref: string; customer_email: string; plan: string }>();
-      if (!row) {
-        return jsonResponse(
-          { ok: false, error: "Active $1,200 Self-Hosted RTP Deployment Kit license required." },
-          403
-        );
-      }
-      const bundle = buildProductionKitBundle(row);
-      return new Response(JSON.stringify(bundle, null, 2), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Content-Disposition": `attachment; filename="hardcall-8khz-rtp-kit-${row.order_id}.json"`,
-          ...SECURITY_HEADERS,
-        },
-      });
     }
 
     if (pathname === "/api/license/restore" && request.method === "POST") {
@@ -1345,6 +1461,14 @@ const worker = {
 
     if (pathname === "/api/webhook" && request.method === "POST") {
       return handleWebhook(request, env);
+    }
+
+    if (pathname === "/api/health" && request.method === "HEAD") {
+      return new Response(null, { status: 200, headers: SECURITY_HEADERS });
+    }
+
+    if (pathname.startsWith("/api/")) {
+      return jsonResponse({ error: "API endpoint not found" }, 404);
     }
 
     const assetRes = await env.ASSETS.fetch(request);

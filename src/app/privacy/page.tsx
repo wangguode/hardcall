@@ -1,4 +1,21 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy & Zero Microphone Egress | HardCall RTP",
+  description:
+    "How HardCall processes WebAudio microphone RMS locally in browser memory with zero audio upload and zero third-party SIP/RTP egress in self-hosted VPC deployments.",
+  alternates: {
+    canonical: "/privacy",
+  },
+  openGraph: {
+    title: "Privacy Policy & Zero Microphone Egress | HardCall RTP",
+    description:
+      "Browser-local WebAudio RMS processing and zero-egress self-hosted VPC telephony data protection policy.",
+    url: "/privacy",
+    type: "website",
+  },
+};
 
 export default function PrivacyPolicyPage() {
   return (

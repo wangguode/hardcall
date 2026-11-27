@@ -238,10 +238,10 @@ export default function HomePage() {
         body: JSON.stringify({ token: restoreTok }),
       })
         .then((r) => (r.ok ? r.json() : null))
-        .then((d: { restored?: boolean; plan?: string; orderId?: string } | null) => {
+        .then((d: { restored?: boolean; plan?: string; orderId?: string; restoreToken?: string } | null) => {
           if (d?.restored) {
             const p: "audit" | "kit" = d.plan === "kit" ? "kit" : "audit";
-            localStorage.setItem("hardcall_license_active", d.orderId || restoreTok);
+            localStorage.setItem("hardcall_license_active", d.restoreToken || restoreTok);
             localStorage.setItem("hardcall_license_plan", p);
             setLicensePlan(p);
             setVerifiedNotice(
@@ -265,38 +265,67 @@ export default function HomePage() {
       return;
     }
 
-    fetch(`/api/verify-checkout?checkout_id=${encodeURIComponent(checkoutId)}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { verified?: boolean; plan?: string } | null) => {
-        if (data?.verified) {
-          const p: "audit" | "kit" = data.plan === "kit" ? "kit" : "audit";
-          localStorage.setItem("hardcall_license_active", checkoutId);
-          localStorage.setItem("hardcall_license_plan", p);
-          setLicensePlan(p);
-          try {
-            const w = window as Window & { lpConvert?: (ev: string, val: number) => void };
-            w.lpConvert?.("purchase", p === "kit" ? 1200 : 299);
-          } catch {
-            // ignore
+    let cancelled = false;
+    setVerifiedNotice(
+      isEn
+        ? "Verifying your Creem.io payment & provisioning B2B workspace..."
+        : "正在与 Creem 核验支付结果并开通企业交付通道..."
+    );
+    (async () => {
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        if (cancelled) return;
+        try {
+          const r = await fetch(`/api/verify-checkout?checkout_id=${encodeURIComponent(checkoutId)}`);
+          const data = (r.ok ? await r.json() : null) as {
+            verified?: boolean;
+            plan?: string;
+            restoreToken?: string;
+          } | null;
+          if (data?.verified) {
+            const p: "audit" | "kit" = data.plan === "kit" ? "kit" : "audit";
+            localStorage.setItem("hardcall_license_active", data.restoreToken || checkoutId);
+            localStorage.setItem("hardcall_license_plan", p);
+            setLicensePlan(p);
+            try {
+              const w = window as Window & { lpConvert?: (ev: string, val: number) => void };
+              w.lpConvert?.("purchase", p === "kit" ? 1200 : 299);
+            } catch {
+              // ignore
+            }
+            setVerifiedNotice(
+              isEn
+                ? `Payment verified via Creem.io (${p === "kit" ? "$1,200 RTP Kit" : "$299 48h Audit"}) — Submit your kickoff target below!`
+                : "Creem 支付核验成功 — 请在下方提交工程对接目标！"
+            );
+            for (const k of ["checkout", "checkout_id", "order_id", "customer_id", "product_id", "signature", "plan"]) {
+              params.delete(k);
+            }
+            const qs = params.toString();
+            window.history.replaceState(
+              {},
+              "",
+              qs ? `${window.location.pathname}?${qs}` : window.location.pathname
+            );
+            setTimeout(() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" }), 250);
+            return;
           }
-          setVerifiedNotice(
-            isEn
-              ? `Payment verified via Creem.io (${p === "kit" ? "$1,200 RTP Kit" : "$299 48h Audit"}) — Submit your kickoff target below!`
-              : "Creem 支付核验成功 — 请在下方提交工程对接目标！"
-          );
-          for (const k of ["checkout", "checkout_id", "order_id", "customer_id", "product_id", "signature", "plan"]) {
-            params.delete(k);
-          }
-          const qs = params.toString();
-          window.history.replaceState(
-            {},
-            "",
-            qs ? `${window.location.pathname}?${qs}` : window.location.pathname
-          );
-          setTimeout(() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" }), 250);
+        } catch {
+          // retry
         }
-      })
-      .catch(() => {});
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+      if (!cancelled) {
+        setVerifiedNotice(
+          isEn
+            ? "Payment received — finalizing webhook sync. Enter your checkout email in the dialog to receive your instant restore link."
+            : "已收到回跳，正在同步订单状态；请在弹窗输入下单邮箱获取一键激活链接。"
+        );
+        setRestoreOpen(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [isEn]);
 
   useEffect(() => {
@@ -402,16 +431,35 @@ export default function HomePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: restoreEmail.trim(),
-          orderRef: restoreOrderRef.trim(),
+          orderRef: restoreOrderRef.trim() || undefined,
         }),
       });
-      const data = (await res.json()) as { restored?: boolean; orderId?: string; plan?: string; error?: string };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        restored?: boolean;
+        magicLinkSent?: boolean;
+        orderId?: string;
+        restoreToken?: string;
+        plan?: string;
+        message?: string;
+        error?: string;
+      };
+      if (data.magicLinkSent) {
+        setVerifiedNotice(
+          data.message ||
+            "If an active B2B order exists for this email, we sent a 1-click verification link to your inbox."
+        );
+        setRestoreOpen(false);
+        return;
+      }
       if (!res.ok || !data.restored) {
-        setRestoreError(data.error || "Order not found. Check your checkout email and Creem Order ID.");
+        setRestoreError(
+          data.error || "Order not found. Enter your full Order ID or leave it blank to get an email link."
+        );
         return;
       }
       const p: "audit" | "kit" = data.plan === "kit" ? "kit" : "audit";
-      localStorage.setItem("hardcall_license_active", data.orderId || "verified");
+      localStorage.setItem("hardcall_license_active", data.restoreToken || data.orderId || "verified");
       localStorage.setItem("hardcall_license_plan", p);
       setLicensePlan(p);
       setVerifiedNotice(
@@ -1862,6 +1910,35 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* 首页专属 FAQPage JSON-LD（不在 privacy/terms 子页注入，确保 Google 富摘要合规） */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: [
+              {
+                "@type": "Question",
+                name: "How does HardCall achieve a 51.96ms (~52ms p95) barge-in cutoff vs 920ms+ on WebSocket wrappers?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "HardCall runs over raw UDP/RTP (ptime=20.0ms) with a 12.0ms adaptive carrier jitter buffer, 1.8ms libsoxr VHQ 8kHz-to-16kHz upsampling, an 18.0ms streaming Fast-Loop speech onset gate, and a 0.16ms lock-free 256-frame outbound ring-buffer flush — totaling 51.96ms end-to-end.",
+                },
+              },
+              {
+                "@type": "Question",
+                name: "Is the $299 48h Latency Audit creditable toward the $1,200 Self-Hosted Deployment Kit?",
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: "Yes, 100%. Every dollar of the $299 48h Latency Audit can be credited toward the $1,200 Self-Hosted Deployment Kit within 30 days, backed by a >=40% latency reduction or 100% refund SLA.",
+                },
+              },
+            ],
+          }),
+        }}
+      />
+
       {/* 合规与企业技术支持页脚 */}
       <footer id="compliance" className="border-t border-white/10 bg-[#060709] py-14 px-4 sm:px-8 text-xs text-[#86868b] leading-relaxed">
         <div className="max-w-5xl mx-auto space-y-8">
@@ -1869,7 +1946,7 @@ export default function HomePage() {
             <div>
               <h4 className="text-white font-semibold mb-2">Privacy &amp; Ephemeral Audio</h4>
               <p>
-                The browser sandbox processes microphone inputs locally via Web Speech API with zero server storage. Enterprise B2B deployments run 100% inside your private VPC / FreeSWITCH cluster with zero third-party audio egress.
+                The browser sandbox processes microphone inputs strictly in local memory via Web Audio API (AudioContext + AnalyserNode RMS) with zero cloud speech streaming and zero server storage. Enterprise B2B deployments run 100% inside your private VPC / FreeSWITCH cluster with zero third-party audio egress.
               </p>
             </div>
             <div>
@@ -2055,11 +2132,9 @@ export default function HomePage() {
               />
               <input
                 type="text"
-                required
-                minLength={6}
                 value={restoreOrderRef}
                 onChange={(e) => setRestoreOrderRef(e.target.value)}
-                placeholder="Creem Order / Checkout ID (e.g. ch_...)"
+                placeholder="Full ch_... / ord_... ID (optional — leave blank for email link)"
                 className="w-full min-h-11 rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm font-mono text-white"
               />
               {restoreError && <p className="text-xs text-red-400">{restoreError}</p>}
@@ -2068,7 +2143,11 @@ export default function HomePage() {
                 disabled={restoreLoading}
                 className="w-full min-h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm cursor-pointer"
               >
-                {restoreLoading ? "Verifying..." : "Verify Order"}
+                {restoreLoading
+                  ? "Verifying..."
+                  : restoreOrderRef.trim().length >= 12
+                  ? "Verify Order Immediately"
+                  : "Send 1-Click Restore Link"}
               </button>
             </form>
           </div>
