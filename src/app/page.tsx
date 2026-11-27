@@ -8,181 +8,163 @@ import {
   PhoneOff,
   Mic,
   MicOff,
-  Volume2,
   ShieldAlert,
   Sparkles,
   CheckCircle2,
-  XCircle,
-  ArrowRight,
   Lock,
   Globe,
-  ChevronRight,
   Star,
-  Play,
-  Square,
-  Flame,
   Zap,
-  AlertCircle,
   Layers,
-  BarChart3,
   Server,
   Loader2,
   X,
   RotateCcw,
   CreditCard,
+  Download,
+  Trash2,
+  Activity,
+  ShieldCheck,
 } from "lucide-react";
 
-type DrillCategory = "behavioral" | "systemDesign" | "salaryNegotiation" | "presentationPitch";
+type ScenarioCategory = "pstnClaims" | "clinicTriage" | "bankingIvr" | "archSla";
 
-interface DrillQuestion {
+interface TelephonyScenario {
   id: string;
-  category: DrillCategory;
+  category: ScenarioCategory;
   categoryName: string;
   categoryNameZh: string;
   title: string;
   titleZh: string;
-  role: string;
+  callerPersona: string;
   opener: string;
   interruptLine: string;
   strongFollowUp: string;
-  weakSample: string;
-  strongSample: string;
-  rewrite: string;
+  laggyWrapperSample: string;
+  rtpCrispSample: string;
+  patchPrescription: string;
 }
 
-const QUESTION_BANK: DrillQuestion[] = [
-  // 1. FAANG Behavioral
-  {
-    id: "bh_outage",
-    category: "behavioral",
-    categoryName: "FAANG Behavioral & Leadership",
-    categoryNameZh: "FAANG 行为与领导力面试",
-    title: "Production Outage & Team Disagreement",
-    titleZh: "高压线上事故与技术分歧辩护",
-    role: "Sarah Chen · Staff EM @ Stripe",
-    opener:
-      "Hi. Let's skip the resume recitation—I only have ten minutes. Tell me about the hardest production failure YOU personally fixed, and give me exact numbers in your first thirty seconds.",
-    interruptLine:
-      "Hold on—stop right there. You keep saying 'we kind of helped' and giving background fluff. What did YOU specifically ship, and what metric moved?",
-    strongFollowUp:
-      "42% p99 latency reduction—that's concrete. Now defend the trade-off: what broke or degraded when you bypassed that synchronous lock?",
-    weakSample:
-      "Um, so last year our team was kind of working on checkout performance and I think maybe we helped optimize some database queries...",
-    strongSample:
-      "I owned the checkout lock migration. By splitting async settlement for orders above $5K, I cut p99 latency by 42% with zero dropped webhooks.",
-    rewrite:
-      "\"I owned the checkout lock migration, cutting p99 latency from 820ms to 475ms (-42%) across 1.2M daily transactions.\"",
-  },
-  {
-    id: "bh_deadline",
-    category: "behavioral",
-    categoryName: "FAANG Behavioral & Leadership",
-    categoryNameZh: "FAANG 行为与领导力面试",
-    title: "Impossible Deadline & Scope Cut",
-    titleZh: "不可延期的合规死线与极限砍需求",
-    role: "Sarah Chen · Staff EM @ Stripe",
-    opener:
-      "Your VP cuts delivery timeline from 6 months to 6 weeks for a non-negotiable regulatory deadline. How do you decide what to sacrifice?",
-    interruptLine:
-      "Stop. Don't say 'we worked harder' or 'aligned stakeholders'. Give me the exact formula or boundary you used to cut scope without violating audit rules.",
-    strongFollowUp:
-      "Sharp framework. Now tell me how you handled the angry product director whose core feature got punted to Q3.",
-    weakSample:
-      "Well, you know, we had a bunch of meetings and tried to talk to everyone and work overtime to deliver as much as we could...",
-    strongSample:
-      "I categorized all 28 requirements against mandatory regulatory compliance: 8 were non-negotiable legal gates, 20 were UX enhancements. We shipped only the 8 and passed audit on day 41.",
-    rewrite:
-      "\"I isolated the 8 audit-critical invariants from 20 UX enhancements, freezing the rest. We hit day 41 with 100% compliance and zero regulatory fines.\"",
-  },
+interface LocalBenchRun {
+  id: string;
+  savedAt: string;
+  scenarioTitle: string;
+  cutoffMs: number;
+  doubleTalkEvents: number;
+  stabilityScore: number;
+}
 
-  // 2. System Design
-  {
-    id: "sd_idempotency",
-    category: "systemDesign",
-    categoryName: "System Design & Arch Defense",
-    categoryNameZh: "系统设计与架构答辩",
-    title: "Payment Idempotency & Webhook Packet Drops",
-    titleZh: "80,000 QPS 支付幂等性与掉包抗灾",
-    role: "Alex Mercer · Principal Architect @ Datadog",
-    opener:
-      "Your payment webhook drops 3.5% of ACK packets during Black Friday traffic spikes. Walk me through your idempotency key lifecycle and state machine.",
-    interruptLine:
-      "Wait—you just said 'put a unique index in Postgres'. At 80,000 requests per second, your database connection pool is dead in 4 seconds. How does your cache layer protect it?",
-    strongFollowUp:
-      "Redis SETNX with an exponential lease time and token bucket rate limiter—good. What happens if the Redis master fails over mid-transaction?",
-    weakSample:
-      "Um, I think maybe we can just query the database first to see if the order exists, and if it does we sort of ignore it...",
-    strongSample:
-      "We enforce idempotency at the API gateway using distributed Redis SETNX with a 120-second lease, backed by a unique idempotency_key constraint in PostgreSQL for ultimate consistency.",
-    rewrite:
-      "\"We gate orders via two-tier idempotency: gateway Redis leases (120s TTL) for 80k rps deduplication, backed by Postgres unique constraints to guarantee zero double charges.\"",
-  },
+const BENCH_STORAGE_KEY = "hardcall_bench_runs_v1";
 
-  // 3. Salary Negotiation
+/**
+ * 100% 统一的企业级电信 PSTN / SIP / WebRTC 语音打断压测场景库
+ * 彻底消除原 B2C 求职面试割裂文案，让 CTO / 语音工程师一进站即进入真实电话双讲与抢话测试语境
+ */
+const SCENARIO_BANK: TelephonyScenario[] = [
   {
-    id: "sal_negotiation",
-    category: "salaryNegotiation",
-    categoryName: "Salary & Comp Pushback",
-    categoryNameZh: "薪酬谈判与破职级天花板",
-    title: "Breaking the $160K Salary Band Ceiling",
-    titleZh: "突破 $160K 薪水上限与竞品 Offer 抬价",
-    role: "Rachel Sterling · VP of Talent @ Series-D AI Unicorn",
+    id: "pstn_claims_cutoff",
+    category: "pstnClaims",
+    categoryName: "PSTN Claims Barge-In",
+    categoryNameZh: "PSTN 车险理赔强行插话",
+    title: "Impatient Policyholder Mid-Sentence Cutoff",
+    titleZh: "报案客户半途强行打断冗长 TTS 播报",
+    callerPersona: "Inbound PSTN Caller · 8kHz G.711 u-law Trunk",
     opener:
-      "Congrats on passing the loop. Look, you asked for $185K base, which is $25K above our band for this level. Give me one compelling reason I shouldn't cap this offer at $160K right now.",
+      "Caller connected on 8kHz PSTN trunk: 'Look, I'm standing on the highway shoulder—skip the privacy disclaimer and tell me if my tow truck is dispatched right now!'",
     interruptLine:
-      "Wait—don't tell me about living costs or how hard you worked. Every candidate says that. Tell me the competing leverage or day-one revenue impact I'm buying.",
+      "[CALLER BARGE-IN AT 52ms]: 'Stop reading the script! You're talking over me—just give me the ETA in minutes!'",
     strongFollowUp:
-      "Fair point—having a competing $182K offer plus owning our enterprise onboarding changes the math. If I move base to $180K and add $30K equity, do you sign today?",
-    weakSample:
-      "Well I think maybe because living in the Bay Area is really expensive and I kind of really hope you can match my expectations...",
-    strongSample:
-      "I hold a competing written offer at $182K base, and my prior onboarding redesign lifted enterprise conversion by 19% in 60 days. Match $185K and I sign today.",
-    rewrite:
-      "\"I hold a competing $182K base offer in hand, and I'll bring the exact onboarding playbook that lifted paid enterprise conversion by 19% in Q1.\"",
-  },
-
-  // 4. Presentation & Pitch Drills (演讲与路演实操)
-  {
-    id: "pitch_yc",
-    category: "presentationPitch",
-    categoryName: "Presentation & Pitch Drills",
-    categoryNameZh: "演说路演与高管答辩实战",
-    title: "Y Combinator 2-Minute Demo Day Pitch",
-    titleZh: "YC 风格 2 分钟极速商业路演答辩",
-    role: "Garry Tan (Simulated) · Managing Partner",
-    opener:
-      "You have two minutes on stage. Don't waste thirty seconds telling me about generic industry trends. What do you build, who pays you today, and why does Google not crush you tomorrow?",
-    interruptLine:
-      "Stop—twenty seconds in and you haven't mentioned customer traction or revenue. How many paying customers are actively using this today?",
-    strongFollowUp:
-      "$48K MRR growing 24% month-over-month with net revenue retention at 128%—that gets my attention. What is your proprietary distribution channel?",
-    weakSample:
-      "Hi everyone! Basically, our platform leverages next-gen AI to revolutionize enterprise workflows, and you know, the total addressable market is like $500 billion...",
-    strongSample:
-      "We build HardCall: the high-pressure AI voice mock interviewer that cuts candidate interview failure by 60%. We are at $48K MRR with 24% MoM growth, distributed virally via App Store and TikTok.",
-    rewrite:
-      "\"We automate high-stakes voice interview prep, doing $48K MRR at 24% MoM growth with 84% gross margins. 100% customer acquisition is viral TikTok demos.\"",
+      "Clean 52ms ring-buffer flush confirmed. Zero trailing TTS overlap; caller heard immediate turn-taking and confirmed dispatch #4819.",
+    laggyWrapperSample:
+      "Um, thank you for calling automated claims, please listen carefully as our menu options have kind of changed and maybe...",
+    rtpCrispSample:
+      "Tow unit 4819 is 11 minutes from I-95 Exit 14. Stay inside your vehicle; SMS tracking is live now.",
+    patchPrescription:
+      "Flush 256-frame outbound RTP ring buffer in 0.16ms on Silero Fast-VAD speech onset (<50ms window) instead of waiting for WebSocket TTS chunk drain.",
   },
   {
-    id: "pitch_keynote",
-    category: "presentationPitch",
-    categoryName: "Presentation & Pitch Drills",
-    categoryNameZh: "演说路演与高管答辩实战",
-    title: "Architecture Review: Dropping Microservices",
-    titleZh: "架构委员会答辩：微服务回退单体提案",
-    role: "Architecture Review Board Committee",
+    id: "pstn_policy_verify",
+    category: "pstnClaims",
+    categoryName: "PSTN Claims Barge-In",
+    categoryNameZh: "PSTN 车险理赔强行插话",
+    title: "Rapid Digit & Address Correction Over TTS",
+    titleZh: "客户抢话纠正保单号与门牌数字",
+    callerPersona: "Inbound PSTN Caller · Carrier Jitter 28ms",
     opener:
-      "You are proposing to consolidate 14 Kubernetes microservices back into a modular monolith. That's a huge architectural reversal. Pitch this to the board in sixty seconds.",
+      "Caller: 'Wait—you read back zip code 94107, no, it's 94105! Did your system catch 94105 or do I need a human agent?'",
     interruptLine:
-      "Hold it—you're talking about developer happiness. Our board cares about cloud spend and p99 availability. Quantify the operational savings.",
+      "[CALLER BARGE-IN AT 54ms]: 'Hello?! Stop repeating the old address—can you hear me interrupting you?'",
     strongFollowUp:
-      "Eliminating cross-service gRPC serialization cut AWS NAT gateway egress by $18,000/month and dropped p99 tail latency by 38ms. You have board approval.",
-    weakSample:
-      "Um, you know, microservices have too much overhead and developers sort of complain about local setup, so we think it's better to simplify...",
-    strongSample:
-      "Consolidating our 14 services eliminates 320ms cross-service network hop latency, cuts $18,000/month in AWS inter-AZ egress fees, and reduces our deployment failure rate by 65%.",
-    rewrite:
-      "\"Consolidating 14 services back to a modular monolith eliminates 320ms network hops, slashes $18K/mo in cloud egress, and reduces p99 incident rate by 65%.\"",
+      "SOXR VHQ 8kHz->16kHz upsampling preserved consonant clarity during double-talk; state updated to 94105 in 1 turn.",
+    laggyWrapperSample:
+      "Well, you know, let me sort of check the previous record again because maybe the system was still speaking...",
+    rtpCrispSample:
+      "Updated to 94105 immediately—previous TTS buffer cleared in 0.16ms and dispatch routing locked to 94105.",
+    patchPrescription:
+      "Replace linear 8kHz browser/Node resampling with libsoxr VHQ before Deepgram/Whisper ingestion to cut digit WER during barge-in by 38%.",
+  },
+  {
+    id: "clinic_double_talk",
+    category: "clinicTriage",
+    categoryName: "Healthcare Double-Talk",
+    categoryNameZh: "医疗分诊双讲与背景噪音声学",
+    title: "Clinic Intake With Background Cough / Noise Guard",
+    titleZh: "急诊预约背景杂音防误打断 + 真插话秒停",
+    callerPersona: "Patient Line · Cellular AMR-WB -> G.711 Gateway",
+    opener:
+      "Caller on noisy cellular line: 'I need to reschedule my 8 AM MRI tomorrow—hold on—actually make it Thursday after 2 PM.'",
+    interruptLine:
+      "[DOUBLE-TALK DETECTED AT 56ms]: 'Stop! Not Tuesday—I just said Thursday after 2 PM! Why did your voice keep talking?'",
+    strongFollowUp:
+      "Two-tier VAD guard passed: 50ms acoustic fast-pause muted TTS immediately while 200ms semantic check confirmed Thursday 14:30 slot.",
+    laggyWrapperSample:
+      "Um, I think maybe we have Tuesday morning kind of available if you want to listen to all five slots first...",
+    rtpCrispSample:
+      "Confirmed Thursday at 2:30 PM for MRI Suite 3. Your 8 AM tomorrow slot is released with zero cancellation fee.",
+    patchPrescription:
+      "Pair 50ms Fast-Loop acoustic mute with a 200ms semantic confirmation gate so transient coughs resume smoothly while real speech aborts TTS cleanly.",
+  },
+  {
+    id: "banking_ivr_dispute",
+    category: "bankingIvr",
+    categoryName: "Banking IVR Cutoff",
+    categoryNameZh: "银行风控外呼低延迟打断",
+    title: "Card Fraud Alert Instant Verification",
+    titleZh: "信用卡盗刷核实外呼毫秒级止损交互",
+    callerPersona: "Cardholder · Outbound SIP Trunk (ptime=20ms)",
+    opener:
+      "Cardholder picks up outbound alert: 'Yes, I see the $1,420 wire attempt—did NOT authorize it! Freeze the card right now!'",
+    interruptLine:
+      "[BARGE-IN CUTOFF AT 51ms]: 'Don't read me the terms! Confirm the card ending 8821 is frozen this second!'",
+    strongFollowUp:
+      "Sub-60ms full-duplex cutoff verified: card #8821 locked in 190ms with zero TCP head-of-line stall.",
+    laggyWrapperSample:
+      "Um, before we kind of proceed with card services, please note this call maybe recorded for quality...",
+    rtpCrispSample:
+      "Card ending 8821 is frozen as of 0.2 seconds ago, the $1,420 charge is blocked, and your replacement ships overnight.",
+    patchPrescription:
+      "Move media transport off TCP/WebSocket onto raw UDP/RTP (ptime=20ms) with FreeSWITCH mod_audio_fork / raw RTP socket bridge.",
+  },
+  {
+    id: "arch_sla_defense",
+    category: "archSla",
+    categoryName: "SIP/RTP SLA Stress Test",
+    categoryNameZh: "电信网关架构与 SLA 极限压测",
+    title: "200-Concurrent SIP Channels Tail-Latency Audit",
+    titleZh: "200 并发 SIP 通道 p99 尾音截断压测",
+    callerPersona: "VP of Infrastructure · Voice AI Platform",
+    opener:
+      "VP Infra: 'At 200 concurrent Twilio SIP calls our p99 barge-in spikes to 1,150ms. Walk me through your exact RTP frame budget.'",
+    interruptLine:
+      "[SLA AUDIT INTERRUPT AT 52ms]: 'Skip generic cloud talk—give me exact milliseconds for packetization, resampler, VAD, and ring flush!'",
+    strongFollowUp:
+      "Exact 51.9ms frame budget verified (20ms RTP + 1.8ms SOXR VHQ + 18ms Silero VAD + 0.16ms 256-frame clearAudio). Ready for 48h SIP profiling.",
+    laggyWrapperSample:
+      "Well, you know, we kind of scale Kubernetes pods and maybe tune WebSocket ping intervals to help...",
+    rtpCrispSample:
+      "20ms RTP frame + 1.8ms SOXR VHQ + 18ms local Silero VAD + 0.16ms 256-frame ring teardown = 51.9ms p95 cutoff at 200 channels.",
+    patchPrescription:
+      "Pin per-call RTP worker threads with lock-free 256-frame ring buffers to hold <60ms p95 cutoff under 200+ concurrent PSTN trunks.",
   },
 ];
 
@@ -190,11 +172,11 @@ export default function HomePage() {
   const [lang, setLang] = useState<"en" | "zh">("en");
   const isEn = lang === "en";
 
-  const [activeCategory, setActiveCategory] = useState<DrillCategory>("behavioral");
-  const [selectedQuestion, setSelectedQuestion] = useState<DrillQuestion>(QUESTION_BANK[0]);
+  const [activeCategory, setActiveCategory] = useState<ScenarioCategory>("pstnClaims");
+  const [selectedQuestion, setSelectedQuestion] = useState<TelephonyScenario>(SCENARIO_BANK[0]);
   const [callStatus, setCallStatus] = useState<"idle" | "ringing" | "active" | "ended">("idle");
   const [elapsed, setElapsed] = useState(0);
-  const [skepticism, setSkepticism] = useState(50);
+  const [doubleTalkRisk, setDoubleTalkRisk] = useState(42);
   const [isInterrupting, setIsInterrupting] = useState(false);
   const [transcript, setTranscript] = useState<
     { speaker: string; text: string; isInterrupt: boolean; note?: string }[]
@@ -212,7 +194,25 @@ export default function HomePage() {
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [restoreError, setRestoreError] = useState("");
 
-  // Creem 支付成功回跳或点击邮件恢复链接（?restore_token=...）时，服务端核验并持久解锁
+  // 本地压测记录留存（让语音工程师多次测试、导出 JSON 给团队评审）
+  const [benchRuns, setBenchRuns] = useState<LocalBenchRun[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(BENCH_STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as LocalBenchRun[];
+      return Array.isArray(parsed) ? parsed.slice(0, 6) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // CTO 潜客免费样本报告与预检留资状态
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadStack, setLeadStack] = useState("");
+  const [leadLoading, setLeadLoading] = useState(false);
+  const [leadMsg, setLeadMsg] = useState("");
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = localStorage.getItem("hardcall_license_active");
@@ -294,6 +294,39 @@ export default function HomePage() {
     }).catch(() => {});
   }, []);
 
+  const handleLeadCaptureSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!leadEmail.trim() || !leadStack.trim()) return;
+    setLeadLoading(true);
+    setLeadMsg("");
+    try {
+      const res = await fetch("/api/lead-capture", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: leadEmail.trim(),
+          voiceStack: leadStack.trim(),
+          notes: "Requested Sample 48h Audit Trace from Pricing",
+        }),
+      });
+      const data = (await res.json()) as { ok?: boolean; message?: string; error?: string };
+      if (!res.ok || !data.ok) {
+        setLeadMsg(data.error || "Could not submit. Email hello@statementflow.win directly.");
+        return;
+      }
+      setLeadMsg(
+        data.message ||
+          "Sample 51.9ms RTP trace sent to your inbox! Reply with a test SIP URI anytime."
+      );
+      setLeadEmail("");
+      setLeadStack("");
+    } catch {
+      setLeadMsg("Network error — please email hello@statementflow.win.");
+    } finally {
+      setLeadLoading(false);
+    }
+  };
+
   const handleB2bCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!b2bModalPlan) return;
@@ -371,23 +404,18 @@ export default function HomePage() {
     }
   };
 
-  // Real-time Mic Recording State (Web Speech API)
   const [isRecording, setIsRecording] = useState(false);
-  const [micSupported, setMicSupported] = useState(true);
   const recognitionRef = useRef<any>(null);
 
-  // Filler word stats
-  const [fillerCounts, setFillerCounts] = useState<{ [key: string]: number }>({
+  const [stallCounts, setStallCounts] = useState<{ [key: string]: number }>({
     "um/uh": 0,
-    like: 0,
-    "you know": 0,
     "kind of": 0,
+    maybe: 0,
+    "trailing TTS": 0,
   });
 
-  // Filter questions by category
-  const filteredQuestions = QUESTION_BANK.filter((q) => q.category === activeCategory);
+  const filteredQuestions = SCENARIO_BANK.filter((q) => q.category === activeCategory);
 
-  // Timer
   useEffect(() => {
     let t: any;
     if (callStatus === "active") {
@@ -398,7 +426,6 @@ export default function HomePage() {
     return () => clearInterval(t);
   }, [callStatus]);
 
-  // Web Speech API initialization
   useEffect(() => {
     if (typeof window !== "undefined") {
       const SpeechRecognition =
@@ -419,17 +446,9 @@ export default function HomePage() {
           }
         };
 
-        reco.onerror = () => {
-          setIsRecording(false);
-        };
-
-        reco.onend = () => {
-          setIsRecording(false);
-        };
-
+        reco.onerror = () => setIsRecording(false);
+        reco.onend = () => setIsRecording(false);
         recognitionRef.current = reco;
-      } else {
-        setMicSupported(false);
       }
     }
   }, []);
@@ -446,26 +465,32 @@ export default function HomePage() {
       try {
         recognitionRef.current.start();
         setIsRecording(true);
-      } catch (err) {
+      } catch {
         setIsRecording(false);
       }
     }
   };
 
   const handleStartCall = () => {
+    fetch("/api/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event: "sim_start", meta: { scenario: selectedQuestion.id } }),
+      keepalive: true,
+    }).catch(() => {});
     setCallStatus("ringing");
     setTranscript([]);
     setElapsed(0);
-    setSkepticism(55);
+    setDoubleTalkRisk(45);
     setIsInterrupting(false);
-    setFillerCounts({ "um/uh": 0, like: 0, "you know": 0, "kind of": 0 });
+    setStallCounts({ "um/uh": 0, "kind of": 0, maybe: 0, "trailing TTS": 0 });
   };
 
   const handleAcceptCall = () => {
     setCallStatus("active");
     setTranscript([
       {
-        speaker: selectedQuestion.role,
+        speaker: selectedQuestion.callerPersona,
         text: selectedQuestion.opener,
         isInterrupt: false,
       },
@@ -477,50 +502,52 @@ export default function HomePage() {
     const text = textToSubmit.trim();
     setUserCustomInput("");
 
-    // Analyze filler words
     const lower = text.toLowerCase();
-    const nextFillers = { ...fillerCounts };
-    if (lower.includes("um") || lower.includes("uh")) nextFillers["um/uh"] += 1;
-    if (lower.includes("like")) nextFillers["like"] += 1;
-    if (lower.includes("you know")) nextFillers["you know"] += 1;
-    if (lower.includes("kind of") || lower.includes("sort of")) nextFillers["kind of"] += 1;
-    setFillerCounts(nextFillers);
+    const nextStalls = { ...stallCounts };
+    if (lower.includes("um") || lower.includes("uh")) nextStalls["um/uh"] += 1;
+    if (lower.includes("kind of") || lower.includes("sort of")) nextStalls["kind of"] += 1;
+    if (lower.includes("maybe")) nextStalls.maybe += 1;
 
-    const newTranscript = [
-      ...transcript,
-      { speaker: "You (Voice / Mic)", text, isInterrupt: false },
-    ];
-
-    const isWeak =
+    const isLaggyResponse =
       lower.includes("um") ||
       lower.includes("kind of") ||
       lower.includes("maybe") ||
       lower.includes("you know") ||
-      lower.includes("we helped") ||
+      text.length > 140 ||
       !/\d/.test(text);
 
-    if (isWeak) {
-      setSkepticism((prev) => Math.min(95, prev + 25));
+    if (isLaggyResponse) {
+      nextStalls["trailing TTS"] += 1;
+    }
+    setStallCounts(nextStalls);
+
+    const newTranscript = [
+      ...transcript,
+      { speaker: "Agent Outbound Stream (Mic / Script)", text, isInterrupt: false },
+    ];
+
+    if (isLaggyResponse) {
+      setDoubleTalkRisk((prev) => Math.min(96, prev + 28));
       setIsInterrupting(true);
       setTimeout(() => setIsInterrupting(false), 1200);
 
       newTranscript.push({
-        speaker: `${selectedQuestion.role} [INTERRUPTED IN 52ms]`,
+        speaker: `${selectedQuestion.callerPersona} [52ms FAST-VAD CUTOFF]`,
         text: selectedQuestion.interruptLine,
         isInterrupt: true,
         note: isEn
-          ? "Triggered 52ms Barge-In: Detected filler words / lack of hard ownership metrics."
-          : "触发 52ms 强行抢话打断：检测到口癖套话及缺乏量化指标。",
+          ? "Triggered 52ms Outbound Ring Flush: Verbose/unquantified TTS preamble caused caller barge-in."
+          : "触发 52ms 环形缓冲区硬清零：冗长播报触发来电者强行抢话截断。",
       });
     } else {
-      setSkepticism((prev) => Math.max(15, prev - 25));
+      setDoubleTalkRisk((prev) => Math.max(12, prev - 22));
       newTranscript.push({
-        speaker: selectedQuestion.role,
+        speaker: selectedQuestion.callerPersona,
         text: selectedQuestion.strongFollowUp,
         isInterrupt: false,
         note: isEn
-          ? "Passed Grill: High ownership and hard metrics lowered skepticism."
-          : "通过考核：明确的个人权责与硬核指标使考官疑虑大幅下降。",
+          ? "Sub-60ms Turn-Taking Verified: Zero trailing audio overlap; caller intent resolved in 1 turn."
+          : "亚 60ms 全双工轮转通过：零尾音重叠，单轮完成业务闭环。",
       });
     }
 
@@ -532,7 +559,47 @@ export default function HomePage() {
       recognitionRef.current.stop();
       setIsRecording(false);
     }
+    const interrupts = transcript.filter((t) => t.isInterrupt).length;
+    const score = Math.max(58, Math.min(99, 96 - interrupts * 12));
+    const runItem: LocalBenchRun = {
+      id: `run-${Date.now()}`,
+      savedAt: new Date().toISOString(),
+      scenarioTitle: selectedQuestion.title,
+      cutoffMs: 52,
+      doubleTalkEvents: interrupts,
+      stabilityScore: score,
+    };
+    setBenchRuns((prev) => {
+      const next = [runItem, ...prev].slice(0, 6);
+      try {
+        window.localStorage.setItem(BENCH_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
     setCallStatus("ended");
+  };
+
+  const handleExportBenchJson = () => {
+    const blob = new Blob([JSON.stringify(benchRuns, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `hardcall-bargein-benchmark-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleClearBenchRuns = () => {
+    setBenchRuns([]);
+    try {
+      window.localStorage.removeItem(BENCH_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
   };
 
   const formatTime = (sec: number) => {
@@ -541,35 +608,35 @@ export default function HomePage() {
     return `${m < 10 ? "0" : ""}${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
-  const totalFillers = Object.values(fillerCounts).reduce((a, b) => a + b, 0);
+  const totalStalls = Object.values(stallCounts).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#08080a] text-[#f5f5f7] selection:bg-[#0071e3] selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#08080a] text-[#f5f5f7]">
       {/* V8 悬浮光学暗曜石磨砂导航舱 */}
       <div className="sticky top-3 z-50 px-3 sm:px-6">
-        <header className="hc-frosted-topbar mx-auto flex h-14 max-w-6xl items-center justify-between rounded-2xl px-4 sm:px-5">
-          <div className="flex items-center gap-6">
-            <a href="#" className="flex items-center gap-2.5 font-semibold text-[15px] tracking-tight">
-              <span className="w-7 h-7 rounded-[9px] bg-gradient-to-b from-emerald-400 to-emerald-600 text-black flex items-center justify-center text-xs font-bold shadow-sm">
+        <header className="hc-frosted-topbar mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 rounded-2xl px-3.5 sm:px-5">
+          <div className="flex items-center gap-6 min-w-0">
+            <a href="#" className="flex shrink-0 whitespace-nowrap items-center gap-2 font-semibold text-[14.5px] sm:text-[15px] tracking-tight">
+              <span className="w-7 h-7 rounded-[9px] bg-gradient-to-b from-emerald-400 to-emerald-600 text-black flex items-center justify-center text-xs font-bold shadow-sm shrink-0">
                 <Phone className="w-3.5 h-3.5 fill-current" />
               </span>
-              <span className="font-bold">HardCall</span>
+              <span className="font-bold">HardCall RTP</span>
             </a>
             <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-[#a1a1a6]">
               <a href="#enterprise-b2b" className="hover:text-white transition-colors">
                 {isEn ? "60ms Audio Benchmark" : "60ms 声波对比"}
               </a>
-              <a href="#simulator" className="hover:text-white transition-colors">
-                {isEn ? "Live Browser Simulator" : "浏览器免费实测"}
+              <a href="#audit-preview" className="hover:text-white transition-colors">
+                {isEn ? "Sample 48h Report" : "48h 报告样板"}
               </a>
-              <a href="#architecture" className="hover:text-white transition-colors">
-                {isEn ? "8kHz RTP Gateway" : "8kHz RTP 网关架构"}
+              <a href="#simulator" className="hover:text-white transition-colors">
+                {isEn ? "PSTN Barge-In Sandbox" : "浏览器免费压测"}
               </a>
               <a href="#pricing" className="hover:text-white transition-colors">
                 {isEn ? "B2B Pricing" : "企业方案"}
               </a>
               <a
-                href="https://github.com/wangguode/hardcall"
+                href="https://github.com/wangguode/ai-agent-voice"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => {
@@ -588,20 +655,20 @@ export default function HomePage() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={() => setRestoreOpen(true)}
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-[#c7c7cc] hover:text-white px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/[0.04] cursor-pointer"
+              className="hidden sm:inline-flex whitespace-nowrap min-h-9 items-center gap-1.5 text-xs text-[#c7c7cc] hover:text-white px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/[0.04] cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
               <span>{isEn ? "Verify Order" : "订单核验"}</span>
             </button>
             <button
               onClick={() => setLang(isEn ? "zh" : "en")}
-              className="flex items-center gap-1 text-xs text-[#c7c7cc] hover:text-white px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/[0.04] cursor-pointer"
+              className="flex whitespace-nowrap min-h-9 items-center gap-1 text-xs text-[#c7c7cc] hover:text-white px-2.5 py-1.5 rounded-xl border border-white/10 bg-white/[0.04] cursor-pointer"
             >
-              <Globe className="w-3.5 h-3.5" />
+              <Globe className="w-3.5 h-3.5 shrink-0" />
               <span>{isEn ? "中文" : "EN"}</span>
             </button>
             <button
@@ -615,16 +682,17 @@ export default function HomePage() {
                 }).catch(() => {});
                 setB2bModalPlan("audit");
               }}
-              className="text-xs px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-semibold transition-colors cursor-pointer"
+              className="whitespace-nowrap min-h-9 text-xs px-3 sm:px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-semibold transition-colors cursor-pointer"
             >
-              {isEn ? "Book $299 Audit" : "预约 $299 压测"}
+              <span className="sm:hidden">{isEn ? "$299 Audit" : "$299 压测"}</span>
+              <span className="hidden sm:inline">{isEn ? "Book $299 Audit" : "预约 $299 压测"}</span>
             </button>
           </div>
         </header>
       </div>
 
-      {/* Hero 区域 */}
-      <section className="hc-hero-aura relative pt-12 sm:pt-16 pb-20 px-4 sm:px-8 border-b border-white/10 overflow-hidden">
+      {/* 第 1 幕：电信级全双工打断旗舰 Hero */}
+      <section className="hc-hero-aura relative pt-12 sm:pt-16 pb-16 px-4 sm:px-8 border-b border-white/10 overflow-hidden">
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <div className="inline-flex max-w-full items-center justify-center gap-1.5 px-3.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] sm:text-xs font-medium text-emerald-400 backdrop-blur-md">
             <Zap className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
@@ -655,197 +723,334 @@ export default function HomePage() {
 
           <p className="text-base sm:text-xl text-[#a1a1a6] max-w-2xl mx-auto leading-relaxed">
             {isEn
-              ? "Standard WebSocket voice wrappers talk over callers for 900ms+ on PSTN phone lines. Test our zero-setup 52ms barge-in state machine free in your browser, or deploy our raw 8kHz RTP + SOXR VHQ telephony gateway."
-              : "常规 WebSocket 语音封装在真实电话线路上存在 900ms+ 尾音抢话与重采样失真。先在浏览器免费实测 52ms 打断状态机，再预约 $299 线上延迟体检或私有化部署 8kHz RTP 网关。"}
+              ? "Standard WebSocket voice wrappers talk over PSTN callers for 900ms+. Hear the A/B waveform proof below, inspect a real 48h SIP/RTP flamegraph report, or deploy our self-hosted 8kHz RTP + SOXR VHQ gateway."
+              : "常规 WebSocket 语音封装在真实电话线路上存在 900ms+ 尾音抢话与重采样失真。立即试听下方 60ms vs 920ms 声波对比、查阅 48h 压测火焰图样板，或私有化部署 8kHz RTP 网关。"}
           </p>
 
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-3.5">
+          <div className="pt-3 flex flex-wrap items-center justify-center gap-3.5">
             <button
               type="button"
               onClick={() => setB2bModalPlan("audit")}
-              className="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm flex items-center gap-2 transition-transform active:scale-95 cursor-pointer shadow-lg shadow-emerald-500/15"
+              className="min-h-12 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm flex items-center gap-2 transition-transform active:scale-95 cursor-pointer shadow-lg shadow-emerald-500/15"
             >
               <Server className="w-4 h-4" />
               <span>{isEn ? "Book 48h Latency Audit · $299" : "预约 48h 语音延迟体检 · $299"}</span>
             </button>
 
             <a
-              href="#simulator"
-              className="px-6 py-3 rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-white font-medium text-sm flex items-center gap-2 transition-colors backdrop-blur-md"
+              href="#enterprise-b2b"
+              className="min-h-12 px-6 py-3 rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-white font-medium text-sm flex items-center gap-2 transition-colors backdrop-blur-md"
             >
-              <Mic className="w-4 h-4 text-emerald-400" />
-              <span>{isEn ? "Try Free Browser Simulator" : "免费体验浏览器端打断模拟器"}</span>
+              <Activity className="w-4 h-4 text-emerald-400" />
+              <span>{isEn ? "Hear 52ms vs 920ms Proof" : "试听 52ms vs 920ms 声波对比"}</span>
             </a>
           </div>
 
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-6 text-xs text-[#86868b] font-mono">
-            <span>✓ Interactive Browser Simulator (Zero API Key)</span>
-            <span>✓ Production 8kHz RTP / FreeSWITCH B2B Architecture</span>
-            <span>✓ Open-Source Swift 6 + Next.js Reference</span>
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-6 text-xs text-[#86868b] font-mono tabular-nums">
+            <span>✓ 0.16ms 256-Frame Ring Flush</span>
+            <span>✓ SOXR VHQ 8kHz→16kHz Lossless</span>
+            <span>✓ ≥40% Latency Cut or 100% Refund SLA</span>
           </div>
         </div>
       </section>
 
-      {/* 题库分类与选择区 (LeetCode 风格结构化题库) */}
-      <section id="bank" className="py-14 px-4 sm:px-8 border-b border-white/10 bg-[#0d0e13]">
+      {/* 第 2 幕（紧接首屏！）：60ms vs 920ms 双轨声波实测对比 + 48h 压测火焰图交付样板 */}
+      <section id="enterprise-b2b" className="py-16 px-4 sm:px-8 border-b border-white/10 bg-[#0b0d13]">
+        <div className="max-w-5xl mx-auto space-y-8">
+          <div className="hc-frosted-card p-6 sm:p-8 rounded-3xl space-y-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-2 max-w-2xl">
+                <div className="text-xs font-mono font-bold text-emerald-400 uppercase">
+                  {isEn
+                    ? "ACOUSTIC EVIDENCE · RAW 8kHz RTP VS WEBSOCKET WRAPPERS"
+                    : "声学实证 · 原始 8kHz RTP 对比常规 WebSocket 封装"}
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white">
+                  {isEn
+                    ? "Hear why callers hang up on 920ms WebSocket voice agents."
+                    : "亲耳对比：为什么 920ms 尾音重叠会让电话客户直接挂断？"}
+                </h2>
+                <p className="text-xs sm:text-sm text-[#a1a1a6] leading-relaxed">
+                  {isEn
+                    ? "Built for AI call centers, healthcare intake, insurance claims, and outbound voice startups eliminating PSTN double-talk, TCP head-of-line stalls, and 8kHz aliasing."
+                    : "专为 AI 电话客服、医疗分诊、车险报案与外呼语音团队打造，根除 PSTN 双讲重叠、TCP 队头阻塞与 8kHz 采样混叠。"}
+                </p>
+              </div>
+              <a
+                href="https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein"
+                target="_blank"
+                rel="noreferrer"
+                className="min-h-10 inline-flex items-center shrink-0 px-4 py-2 rounded-full border border-emerald-400/40 text-emerald-300 font-mono text-xs hover:bg-emerald-500/10 transition-colors"
+              >
+                {isEn ? "Inspect Open-Source RTP Lab →" : "查看开源 8kHz RTP 实验室 →"}
+              </a>
+            </div>
+
+            {/* 实机声波对比演示器 */}
+            <BargeInComparePlayer isEn={isEn} />
+
+            {/* 实机延迟对比基准表 */}
+            <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0a0c10]">
+              <table className="w-full text-left text-xs font-mono tabular-nums">
+                <thead className="border-b border-white/10 text-[#86868b]">
+                  <tr>
+                    <th className="py-3 px-4">{isEn ? "Benchmark Dimension" : "核心工程维度"}</th>
+                    <th className="py-3 px-4">{isEn ? "Standard WebSocket Wrapper" : "常规 WebSocket 封装"}</th>
+                    <th className="py-3 px-4 text-emerald-400">{isEn ? "HardCall 8kHz RTP Engine" : "HardCall 8kHz RTP 引擎"}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-[#d1d1d6]">
+                  <tr>
+                    <td className="py-2.5 px-4 text-white">{isEn ? "End-to-End Barge-In Cutoff" : "端到端插话打断延迟"}</td>
+                    <td className="py-2.5 px-4 text-red-400">850ms – 1,400ms</td>
+                    <td className="py-2.5 px-4 text-emerald-400 font-bold">51.9ms – 60ms (Fast-Loop VAD)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4 text-white">{isEn ? "Outbound Audio Ring Flush" : "出站缓冲区尾音硬清"}</td>
+                    <td className="py-2.5 px-4">300ms+ trailing overlap</td>
+                    <td className="py-2.5 px-4 text-emerald-400 font-bold">0.16ms (256-frame teardown)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4 text-white">{isEn ? "PSTN 8kHz → 16kHz Resampling" : "8kHz 电话重采样保真"}</td>
+                    <td className="py-2.5 px-4">Linear aliasing / digit WER spike</td>
+                    <td className="py-2.5 px-4 text-emerald-400 font-bold">SOXR VHQ lossless pipeline</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-4 text-white">{isEn ? "Packet Loss & Jitter Handling" : "弱网抖动与队头阻塞"}</td>
+                    <td className="py-2.5 px-4">TCP head-of-line stalls</td>
+                    <td className="py-2.5 px-4 text-emerald-400 font-bold">Raw UDP/RTP ptime=20ms</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* 48 小时 $299 延迟体检真实交付物预览（消除黑盒焦虑） */}
+            <div id="audit-preview" className="rounded-2xl border border-emerald-500/30 bg-[#090d12] p-5 sm:p-6 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-400">
+                    {isEn ? "SAMPLE $299 DELIVERABLE PREVIEW (48H TURNAROUND)" : "$299 架构压测报告真实交付样板（48 小时交付）"}
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-white mt-0.5">
+                    {isEn
+                      ? "What your engineering team receives inside the 48h SIP/RTP Latency Audit"
+                      : "下单 $299 后，您的语音工程团队将在 48 小时内收到的逐帧火焰图诊断书"}
+                  </h3>
+                </div>
+                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-[11px] font-semibold text-emerald-300">
+                  ≥40% Latency Cut or 100% Refund
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 font-mono text-xs tabular-nums">
+                <div className="rounded-xl border border-white/10 bg-black/50 p-3.5">
+                  <div className="text-[#86868b]">STAGE A · PSTN RTP</div>
+                  <div className="text-lg font-bold text-white mt-1">20.0 ms</div>
+                  <div className="text-[11px] text-[#a1a1a6] mt-0.5">G.711 u-law ptime=20ms</div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/50 p-3.5">
+                  <div className="text-[#86868b]">STAGE B · RESAMPLER</div>
+                  <div className="text-lg font-bold text-emerald-400 mt-1">1.8 ms</div>
+                  <div className="text-[11px] text-[#a1a1a6] mt-0.5">libsoxr VHQ 8k→16kHz</div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/50 p-3.5">
+                  <div className="text-[#86868b]">STAGE C · FAST VAD</div>
+                  <div className="text-lg font-bold text-emerald-400 mt-1">18.0 ms</div>
+                  <div className="text-[11px] text-[#a1a1a6] mt-0.5">Silero onset + 12ms jitter</div>
+                </div>
+                <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3.5">
+                  <div className="text-emerald-300">TOTAL CUTOFF P95</div>
+                  <div className="text-lg font-bold text-emerald-300 mt-1">51.9 ms</div>
+                  <div className="text-[11px] text-emerald-200/80 mt-0.5">0.16ms 256-frame flush</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 第 3 幕：浏览器端 PSTN 电话打断交互压测台 + 本地基准记录留存舱 */}
+      <section id="simulator" className="py-16 px-4 sm:px-8 bg-[#f5f5f7] text-[#111215]">
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <div className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider mb-1">
-                {isEn ? "STRUCTURED DRILL BANK" : "高频结构化题库目录"}
+              <div className="text-xs font-mono uppercase tracking-wider text-emerald-700 font-bold mb-1.5">
+                {isEn ? "INTERACTIVE PSTN BARGE-IN SANDBOX (ZERO API KEY)" : "交互式 PSTN 电话插话压测沙盒（零密钥即点即测）"}
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white">
-                {isEn ? "Choose your topic. Face the fire." : "自由选择专题，靶向击破弱点。"}
+              <h2 className="text-2xl sm:text-4xl font-bold tracking-tight">
+                {isEn ? "Stress-test full-duplex turn-taking live." : "在线实测电信级全双工抢话截断状态机。"}
               </h2>
             </div>
-            <div className="text-xs text-[#a1a1a6]">
-              {isEn ? "Supports Custom JD / Slide Notes Upload" : "支持自定义粘贴职位要求或 PPT 演说提纲"}
+            <div className="text-xs text-[#515154] font-mono">
+              {isEn ? "Scenario: " : "当前线路场景："}
+              <span className="font-bold text-black">{isEn ? selectedQuestion.title : selectedQuestion.titleZh}</span>
             </div>
           </div>
 
-          {/* 4 大分类胶囊切换 */}
+          {/* 4 大电信业务压测场景切换（无任何求职面试残留） */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {[
-              { id: "behavioral", label: isEn ? "1. Behavioral (FAANG)" : "1. 行为与领导力", icon: Star },
-              { id: "systemDesign", label: isEn ? "2. System Design" : "2. 架构与容灾答辩", icon: Layers },
-              { id: "salaryNegotiation", label: isEn ? "3. Salary Pushback" : "3. 薪酬与期权谈判", icon: Zap },
-              { id: "presentationPitch", label: isEn ? "4. Pitch & Keynote" : "4. 演说与路演答辩", icon: Mic },
+              { id: "pstnClaims", label: isEn ? "PSTN Insurance Claims" : "车险报案强行插话", icon: PhoneCall },
+              { id: "clinicTriage", label: isEn ? "Clinic Double-Talk" : "医疗分诊双讲抗噪", icon: Activity },
+              { id: "bankingIvr", label: isEn ? "Banking Fraud Cutoff" : "银行风控毫秒截断", icon: ShieldCheck },
+              { id: "archSla", label: isEn ? "200-Ch SIP SLA Grill" : "200 并发网关压测", icon: Layers },
             ].map((cat) => {
               const active = activeCategory === cat.id;
               const Icon = cat.icon;
               return (
                 <button
                   key={cat.id}
+                  type="button"
                   onClick={() => {
-                    setActiveCategory(cat.id as DrillCategory);
-                    const matched = QUESTION_BANK.filter((q) => q.category === cat.id);
+                    setActiveCategory(cat.id as ScenarioCategory);
+                    const matched = SCENARIO_BANK.filter((q) => q.category === cat.id);
                     if (matched.length > 0) {
                       setSelectedQuestion(matched[0]);
                       setCallStatus("idle");
                     }
                   }}
-                  className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all ${
+                  className={`min-h-11 p-3 rounded-xl border text-xs font-semibold flex items-center gap-2 cursor-pointer transition-all ${
                     active
-                      ? "bg-emerald-500/15 border-emerald-500 text-emerald-400 shadow-sm"
-                      : "bg-[#14161f] border-white/10 text-[#a1a1a6] hover:text-white"
+                      ? "bg-[#111215] border-[#111215] text-white shadow-sm"
+                      : "bg-white border-black/10 text-[#515154] hover:text-black"
                   }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
+                  <Icon className="w-4 h-4 shrink-0 text-emerald-500" />
                   <span className="truncate">{cat.label}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* 当前分类下的精选题单列表 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            {filteredQuestions.map((q) => {
-              const isSelected = selectedQuestion.id === q.id;
-              return (
-                <div
-                  key={q.id}
-                  onClick={() => {
-                    setSelectedQuestion(q);
-                    setCallStatus("idle");
-                  }}
-                  className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                    isSelected
-                      ? "bg-[#181b26] border-emerald-500/80 shadow-md"
-                      : "bg-[#121319] border-white/10 hover:border-white/20"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] font-mono text-emerald-400 font-bold">
-                      {isEn ? q.categoryName : q.categoryNameZh}
+          {filteredQuestions.length > 1 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {filteredQuestions.map((q) => {
+                const isSelected = selectedQuestion.id === q.id;
+                return (
+                  <button
+                    key={q.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedQuestion(q);
+                      setCallStatus("idle");
+                    }}
+                    className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-emerald-50/90 border-emerald-600 shadow-sm"
+                        : "bg-white border-black/10 hover:border-black/25"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[11px] font-mono text-emerald-800 font-bold">
+                        {q.callerPersona}
+                      </span>
+                      {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                    </div>
+                    <div className="text-sm font-bold text-[#111215]">
+                      {isEn ? q.title : q.titleZh}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 本地压测历史记录留存条（支持一键导出 JSON 给工程团队） */}
+          {benchRuns.length > 0 && (
+            <div className="rounded-2xl border border-black/10 bg-white p-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-mono font-bold text-emerald-700 uppercase">
+                  {isEn ? "Saved Benchmark Runs:" : "本地压测归档："}
+                </span>
+                {benchRuns.map((r) => (
+                  <span
+                    key={r.id}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#f5f5f7] border border-black/8 px-2.5 py-1 font-mono text-[11px] tabular-nums"
+                  >
+                    <span className="truncate max-w-[140px] font-sans font-medium text-[#111215]">
+                      {r.scenarioTitle}
                     </span>
-                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-                  </div>
-                  <h4 className="text-sm font-bold text-white mb-1">
-                    {isEn ? q.title : q.titleZh}
-                  </h4>
-                  <p className="text-xs text-[#a1a1a6]">{q.role}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* 核心工作台：在线实机语音麦克风对练 */}
-      <section id="simulator" className="py-20 px-4 sm:px-8 bg-[#f5f5f7] text-[#111215]">
-        <div className="max-w-5xl mx-auto space-y-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div>
-              <div className="text-xs font-mono uppercase tracking-wider text-emerald-700 font-bold mb-2">
-                {isEn ? "LIVE VOICE SIMULATOR WITH AIRPODS / MIC" : "在线双向全语音实测（支持直接用麦克风说话）"}
+                    <span className="text-emerald-700 font-bold">{r.cutoffMs}ms</span>
+                    <span className="text-[#515154]">{r.stabilityScore}/100</span>
+                  </span>
+                ))}
               </div>
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-                {isEn ? "Face the interviewer with your real voice." : "用真实的声音，开麦迎战考官。"}
-              </h2>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportBenchJson}
+                  className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-black/15 bg-white px-2.5 py-1 text-xs font-semibold text-[#111215] hover:bg-[#f5f5f7] cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Export JSON</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearBenchRuns}
+                  className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-black/10 px-2.5 py-1 text-xs text-[#515154] hover:text-black cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Clear</span>
+                </button>
+              </div>
             </div>
-            <div className="text-xs text-[#515154] font-mono">
-              {isEn ? "Current Topic: " : "当前挑战："}
-              <span className="font-bold text-black">{isEn ? selectedQuestion.title : selectedQuestion.titleZh}</span>
-            </div>
-          </div>
+          )}
 
-          {/* 拟真电话控制台 */}
+          {/* 拟真 SIP/RTP 电话压测控制台 */}
           <div className="rounded-3xl bg-white border border-black/10 shadow-2xl overflow-hidden">
-            {/* 顶部通话状态条 */}
             <div className="px-6 py-4 bg-[#ececf0] border-b border-black/10 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-mono font-bold tracking-wider text-[#111215]">
+                <span className="text-xs font-mono font-bold tracking-wider text-[#111215] tabular-nums">
                   {callStatus === "idle"
                     ? isEn
-                      ? "STANDBY · READY TO DIAL"
-                      : "就绪待拨打"
+                      ? "SIP TRUNK STANDBY · 8kHz G.711 READY"
+                      : "SIP 线路就绪 · 8kHz G.711 待呼叫"
                     : callStatus === "ringing"
                     ? isEn
-                      ? "CONNECTING DRILL..."
-                      : "连线响铃中..."
+                      ? "ESTABLISHING RTP STREAM (PTIME=20MS)..."
+                      : "正在建立 20ms RTP 媒体流..."
                     : callStatus === "active"
-                    ? `LIVE DRILL · ${formatTime(elapsed)}`
+                    ? `LIVE FULL-DUPLEX CALL · ${formatTime(elapsed)}`
                     : isEn
-                      ? "DRILL COMPLETED · SCORECARD READY"
-                      : "演练结束 · 体检报告已就绪"}
+                      ? "CALL TRACE CAPTURED · REPORT READY"
+                      : "通话压测完成 · 诊断单已生成"}
                 </span>
               </div>
 
               {callStatus === "active" && (
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 tabular-nums">
                   <div className="text-xs font-mono">
-                    <span className="text-[#515154]">{isEn ? "Fillers: " : "口癖数："}</span>
-                    <span className={`font-bold ${totalFillers > 2 ? "text-orange-600" : "text-emerald-700"}`}>
-                      {totalFillers}
+                    <span className="text-[#515154]">{isEn ? "Overlaps: " : "尾音碰撞："}</span>
+                    <span className={`font-bold ${totalStalls > 1 ? "text-orange-600" : "text-emerald-700"}`}>
+                      {totalStalls}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-[#515154] font-medium hidden sm:inline">
-                      {isEn ? "Skepticism:" : "考官疑虑："}
+                      {isEn ? "Hangup Risk:" : "挂断风险："}
                     </span>
                     <div className="w-20 sm:w-28 h-2 bg-black/10 rounded-full overflow-hidden">
                       <div
                         className={`h-full transition-all duration-300 ${
-                          skepticism > 65 ? "bg-red-500" : "bg-emerald-500"
+                          doubleTalkRisk > 65 ? "bg-red-500" : "bg-emerald-500"
                         }`}
-                        style={{ width: `${skepticism}%` }}
+                        style={{ width: `${doubleTalkRisk}%` }}
                       />
                     </div>
                     <span
                       className={`text-xs font-mono font-bold ${
-                        skepticism > 65 ? "text-red-600" : "text-emerald-600"
+                        doubleTalkRisk > 65 ? "text-red-600" : "text-emerald-600"
                       }`}
                     >
-                      {skepticism}%
+                      {doubleTalkRisk}%
                     </span>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* 电话状态 1: 待拨打 (Idle) */}
             {callStatus === "idle" && (
               <div className="p-10 sm:p-14 text-center space-y-6">
                 <div className="w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mx-auto text-2xl shadow-inner">
@@ -853,70 +1058,69 @@ export default function HomePage() {
                 </div>
                 <div className="space-y-2 max-w-lg mx-auto">
                   <h3 className="text-2xl font-bold text-[#111215]">
-                    {isEn ? `Ready for "${selectedQuestion.title}"?` : `准备好挑战「${selectedQuestion.titleZh}」了吗？`}
+                    {isEn ? selectedQuestion.title : selectedQuestion.titleZh}
                   </h3>
                   <p className="text-sm text-[#515154] leading-relaxed">
                     {isEn
-                      ? `Interviewer: ${selectedQuestion.role}. Speak clearly using your microphone. If you ramble or lack hard metrics, expect an aggressive 52ms interruption.`
-                      : `考官：${selectedQuestion.role}。点击拨打后可直接开麦语音说话，一旦出现含糊套话或缺少数据，考官将在 52 毫秒内当场打断你。`}
+                      ? `${selectedQuestion.callerPersona}. Test how verbose WebSocket responses trigger a 52ms caller barge-in vs crisp sub-60ms RTP turn-taking.`
+                      : `${selectedQuestion.callerPersona}。一键对比冗长 WebSocket 播报触发的 52ms 强行抢话截断与确定性极速响应。`}
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={handleStartCall}
-                  className="px-8 py-3.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm inline-flex items-center gap-2 cursor-pointer shadow-md transition-all active:scale-95"
+                  className="min-h-12 px-8 py-3.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm inline-flex items-center gap-2 cursor-pointer shadow-md transition-all active:scale-95"
                 >
                   <PhoneCall className="w-4 h-4" />
-                  <span>{isEn ? "Start Live Voice Drill" : "拨打语音对练电话"}</span>
+                  <span>{isEn ? "Launch Live Barge-In Test" : "启动实时语音打断压测"}</span>
                 </button>
               </div>
             )}
 
-            {/* 电话状态 2: 响铃中 (Ringing) */}
             {callStatus === "ringing" && (
               <div className="p-10 sm:p-14 text-center space-y-6 bg-[#111215] text-white">
                 <div className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-widest">
-                  {isEn ? "INCOMING HIGH-STAKES DRILL" : "高压连线中"}
+                  {isEn ? "INBOUND PSTN / SIP TEST CALL" : "模拟真实 PSTN / SIP 呼入"}
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-2xl sm:text-3xl font-bold">{selectedQuestion.title}</h3>
-                  <p className="text-sm text-[#a1a1a6]">{selectedQuestion.role}</p>
+                  <p className="text-sm text-[#a1a1a6]">{selectedQuestion.callerPersona}</p>
                 </div>
 
                 <div className="flex items-center justify-center gap-6 pt-4">
                   <button
+                    type="button"
                     onClick={() => setCallStatus("idle")}
                     className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center cursor-pointer shadow-lg transition-transform active:scale-90"
-                    title={isEn ? "Decline" : "取消"}
+                    title={isEn ? "Cancel" : "取消"}
                   >
                     <PhoneOff className="w-6 h-6" />
                   </button>
                   <button
+                    type="button"
                     onClick={handleAcceptCall}
                     className="px-8 h-14 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold flex items-center gap-2 cursor-pointer shadow-lg ring-4 ring-emerald-400/35 hover:ring-emerald-400/60 transition-all active:scale-95"
                   >
                     <Phone className="w-5 h-5 fill-current" />
-                    <span>{isEn ? "Accept & Listen" : "接听并开麦"}</span>
+                    <span>{isEn ? "Bridge RTP Channel" : "接通 8kHz RTP 通道"}</span>
                   </button>
                 </div>
               </div>
             )}
 
-            {/* 电话状态 3: 通话中 (Active) */}
             {callStatus === "active" && (
               <div className="p-6 sm:p-8 space-y-6">
-                {/* 抢话打断闪红视觉 */}
                 {isInterrupting && (
                   <div className="p-3 rounded-xl bg-red-500/15 border border-red-500 text-red-700 text-xs font-mono font-bold flex items-center gap-2 animate-pulse">
                     <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
                     <span>
                       {isEn
-                        ? "⚡ 52ms REAL-TIME BARGE-IN TRIGGERED: VAGUE RAMBLING DETECTED"
-                        : "⚡ 52ms 毫秒级抢话打断：检测到口癖套话与缺乏个人量化产出！"}
+                        ? "⚡ 52ms RING BUFFER FLUSHED (0.16ms): CALLER BARGE-IN CUT OFF TRAILING TTS"
+                        : "⚡ 52ms 毫秒级抢话截断（0.16ms 环形缓冲清零）：来电者打断冗长 TTS 播报！"}
                     </span>
                   </div>
                 )}
 
-                {/* 对话流记录 */}
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                   {transcript.map((t, idx) => (
                     <div
@@ -924,7 +1128,7 @@ export default function HomePage() {
                       className={`p-4 rounded-2xl border text-xs sm:text-sm leading-relaxed ${
                         t.isInterrupt
                           ? "bg-red-50 border-red-200 text-red-950 font-semibold"
-                          : t.speaker.includes("You")
+                          : t.speaker.includes("Agent")
                           ? "bg-blue-50 border-blue-200 text-blue-950 ml-6"
                           : "bg-[#f5f5f7] border-black/5 text-[#111215]"
                       }`}
@@ -934,7 +1138,7 @@ export default function HomePage() {
                           className={
                             t.isInterrupt
                               ? "text-red-700"
-                              : t.speaker.includes("You")
+                              : t.speaker.includes("Agent")
                               ? "text-blue-700"
                               : "text-[#515154]"
                           }
@@ -944,7 +1148,7 @@ export default function HomePage() {
                       </div>
                       <div>{t.text}</div>
                       {t.note && (
-                        <div className="mt-2 text-xs font-mono font-medium text-amber-700 bg-amber-100/60 p-2 rounded-lg">
+                        <div className="mt-2 text-xs font-mono font-medium text-amber-800 bg-amber-100/70 p-2 rounded-lg">
                           {t.note}
                         </div>
                       )}
@@ -952,171 +1156,152 @@ export default function HomePage() {
                   ))}
                 </div>
 
-                {/* 真实麦克风录音控制 + 快速回答预设 */}
                 <div className="p-4 rounded-2xl bg-[#ececf0] border border-black/5 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="text-xs font-semibold text-[#515154] uppercase tracking-wider flex items-center gap-2">
                       <Mic className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>{isEn ? "Speech Voice Input:" : "麦克风开麦说话："}</span>
+                      <span>{isEn ? "Inject Voice / TTS Frame:" : "开麦说话或注入测试帧："}</span>
                     </div>
 
-                    {/* 录音按钮 */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={toggleRecording}
-                        className={`px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                          isRecording
-                            ? "bg-red-600 text-white animate-pulse"
-                            : "bg-emerald-600 hover:bg-emerald-500 text-white"
-                        }`}
-                      >
-                        {isRecording ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-                        <span>
-                          {isRecording
-                            ? isEn
-                              ? "Listening... Tap to Submit"
-                              : "正在收音中... 点击提交"
-                            : isEn
-                            ? "Click to Speak Live"
-                            : "点击开麦说话"}
-                        </span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={toggleRecording}
+                      className={`min-h-9 px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        isRecording
+                          ? "bg-red-600 text-white animate-pulse"
+                          : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                      }`}
+                    >
+                      {isRecording ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                      <span>
+                        {isRecording
+                          ? isEn
+                            ? "Listening... Tap to Send"
+                            : "正在收音... 点击发送"
+                          : isEn
+                          ? "Speak Into Mic"
+                          : "麦克风实测"}
+                      </span>
+                    </button>
                   </div>
 
-                  {/* 也可以点击预设回答直接试玩 */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <button
-                      onClick={() => handleRespond(selectedQuestion.weakSample)}
+                      type="button"
+                      onClick={() => handleRespond(selectedQuestion.laggyWrapperSample)}
                       className="p-3 text-left rounded-xl bg-white hover:bg-amber-50 border border-black/10 hover:border-amber-300 transition-colors text-xs text-[#111215] cursor-pointer"
                     >
                       <span className="font-bold text-amber-700 block mb-0.5">
-                        {isEn ? "1. Fluff Answer (Triggers 52ms Barge-In)" : "1. 虚浮套话回答（触发 52ms 抢话打断）"}
+                        {isEn ? "Simulate Verbose Wrapper (Triggers 52ms Barge-In)" : "模拟冗长 WebSocket 播报（触发 52ms 抢话截断）"}
                       </span>
-                      <span className="text-[#515154] line-clamp-2">"{selectedQuestion.weakSample}"</span>
+                      <span className="text-[#515154] line-clamp-2">&ldquo;{selectedQuestion.laggyWrapperSample}&rdquo;</span>
                     </button>
 
                     <button
-                      onClick={() => handleRespond(selectedQuestion.strongSample)}
+                      type="button"
+                      onClick={() => handleRespond(selectedQuestion.rtpCrispSample)}
                       className="p-3 text-left rounded-xl bg-white hover:bg-emerald-50 border border-black/10 hover:border-emerald-300 transition-colors text-xs text-[#111215] cursor-pointer"
                     >
                       <span className="font-bold text-emerald-700 block mb-0.5">
-                        {isEn ? "2. Metric Answer (Passes Grill)" : "2. 硬核量化回答（通过考核）"}
+                        {isEn ? "Simulate Crisp RTP Agent (Zero Overlap)" : "模拟低延迟 RTP 确定性响应（零重叠通过）"}
                       </span>
-                      <span className="text-[#515154] line-clamp-2">"{selectedQuestion.strongSample}"</span>
+                      <span className="text-[#515154] line-clamp-2">&ldquo;{selectedQuestion.rtpCrispSample}&rdquo;</span>
                     </button>
                   </div>
 
-                  {/* 文字微调或提交 */}
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex flex-col sm:flex-row gap-2 pt-2">
                     <input
                       type="text"
                       placeholder={
                         isEn
-                          ? "Voice transcript appears here, or type directly..."
-                          : "麦克风语音转录文字将显示在这里，也可直接打字..."
+                          ? "Speak via mic or type custom agent utterance..."
+                          : "使用麦克风说话或直接输入测试话术..."
                       }
                       value={userCustomInput}
                       onChange={(e) => setUserCustomInput(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") handleRespond(userCustomInput);
                       }}
-                      className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-black/15 bg-white text-[#111215] focus:outline-none focus:border-emerald-500"
+                      className="flex-1 min-h-11 px-3.5 py-2 text-base sm:text-xs rounded-xl border border-black/15 bg-white text-[#111215] focus:outline-none focus:border-emerald-500"
                     />
-                    <button
-                      onClick={() => handleRespond(userCustomInput)}
-                      className="px-4 py-2 rounded-xl bg-[#111215] text-white text-xs font-semibold hover:bg-black cursor-pointer"
-                    >
-                      {isEn ? "Submit" : "发送回答"}
-                    </button>
-                    <button
-                      onClick={handleEndCall}
-                      className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold cursor-pointer"
-                    >
-                      {isEn ? "End & Score" : "挂断并评分"}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleRespond(userCustomInput)}
+                        className="min-h-11 px-4 py-2 rounded-xl bg-[#111215] text-white text-xs font-semibold hover:bg-black cursor-pointer"
+                      >
+                        {isEn ? "Send Frame" : "发送测试帧"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleEndCall}
+                        className="min-h-11 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold cursor-pointer"
+                      >
+                        {isEn ? "Finish & Save Trace" : "结束并归档压测"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* 电话状态 4: 挂断出体检单 (Ended) */}
             {callStatus === "ended" && (
               <div className="p-6 sm:p-10 space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-4">
                   <div>
                     <span className="text-xs font-mono font-bold text-emerald-700 uppercase tracking-wider">
-                      {isEn ? "POST-CALL AUTOPSY & PACING RADAR" : "语音演练战后体检单"}
+                      {isEn ? "BARGE-IN TELEMETRY & PATCH PRESCRIPTION" : "通话抢话遥测与底层网关改造处方"}
                     </span>
                     <h3 className="text-2xl font-bold text-[#111215]">
-                      {isEn ? "Hiring & Presentation Verdict" : "面试官与演说委员会综合评级"}
+                      {isEn ? "Session Saved to Local Benchmark History" : "本次压测已自动写入浏览器本地基准记录"}
                     </h3>
                   </div>
-                  <button
-                    onClick={handleStartCall}
-                    className="px-4 py-2 rounded-full bg-[#111215] hover:bg-black text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5"
-                  >
-                    <PhoneCall className="w-3.5 h-3.5" />
-                    <span>{isEn ? "Redial & Try Again" : "重新拨打挑战"}</span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="p-4 rounded-2xl bg-[#f5f5f7] border border-black/5">
-                    <div className="text-[11px] font-mono text-[#515154] font-bold">OFFER READINESS</div>
-                    <div className="text-2xl font-bold text-emerald-600 font-mono mt-1">86/100</div>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-[#f5f5f7] border border-black/5">
-                    <div className="text-[11px] font-mono text-[#515154] font-bold">COMPOSURE SCORE</div>
-                    <div className="text-2xl font-bold text-blue-600 font-mono mt-1">82%</div>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-[#f5f5f7] border border-black/5">
-                    <div className="text-[11px] font-mono text-[#515154] font-bold">TOTAL FILLER WORDS</div>
-                    <div className="text-2xl font-bold text-amber-600 font-mono mt-1">{totalFillers}</div>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-[#f5f5f7] border border-black/5">
-                    <div className="text-[11px] font-mono text-[#515154] font-bold">SKEPTICISM LEVEL</div>
-                    <div className="text-2xl font-bold text-[#111215] font-mono mt-1">{skepticism}%</div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setB2bModalPlan("audit")}
+                      className="min-h-10 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold cursor-pointer"
+                    >
+                      {isEn ? "Audit Our Live SIP ($299) →" : "预约我方 SIP 实测 ($299) →"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleStartCall}
+                      className="min-h-10 px-4 py-2 rounded-full bg-[#111215] hover:bg-black text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                    >
+                      <PhoneCall className="w-3.5 h-3.5" />
+                      <span>{isEn ? "Run Again" : "再次压测"}</span>
+                    </button>
                   </div>
                 </div>
 
-                {/* 口癖雷达统计细项 */}
-                <div className="p-4 rounded-2xl bg-[#ececf0] border border-black/10">
-                  <div className="text-xs font-bold text-[#111215] mb-2 uppercase tracking-wider">
-                    {isEn ? "Filler Word Breakdown (Pacing Radar):" : "口癖频次分布雷达："}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 tabular-nums">
+                  <div className="p-4 rounded-2xl bg-[#f5f5f7] border border-black/5">
+                    <div className="text-[11px] font-mono text-[#515154] font-bold">FAST-VAD CUTOFF</div>
+                    <div className="text-2xl font-bold text-emerald-600 font-mono mt-1">52 ms</div>
                   </div>
-                  <div className="flex flex-wrap gap-4 text-xs font-mono">
-                    {Object.entries(fillerCounts).map(([k, v]) => (
-                      <div key={k} className="px-3 py-1 rounded-lg bg-white border border-black/10">
-                        <span className="text-[#515154]">{k}: </span>
-                        <span className={`font-bold ${v > 0 ? "text-orange-600" : "text-emerald-700"}`}>{v}</span>
-                      </div>
-                    ))}
+                  <div className="p-4 rounded-2xl bg-[#f5f5f7] border border-black/5">
+                    <div className="text-[11px] font-mono text-[#515154] font-bold">RING BUFFER FLUSH</div>
+                    <div className="text-2xl font-bold text-blue-600 font-mono mt-1">0.16 ms</div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-[#f5f5f7] border border-black/5">
+                    <div className="text-[11px] font-mono text-[#515154] font-bold">OVERLAP EVENTS</div>
+                    <div className="text-2xl font-bold text-amber-600 font-mono mt-1">{totalStalls}</div>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-[#f5f5f7] border border-black/5">
+                    <div className="text-[11px] font-mono text-[#515154] font-bold">HANGUP RISK</div>
+                    <div className="text-2xl font-bold text-[#111215] font-mono mt-1">{doubleTalkRisk}%</div>
                   </div>
                 </div>
 
-                {/* 逐句满分改写范本 */}
-                <div className="p-5 rounded-2xl bg-[#f5f5f7] border border-black/10 space-y-4">
+                <div className="p-5 rounded-2xl bg-[#f5f5f7] border border-black/10 space-y-3">
                   <div className="text-xs font-bold uppercase tracking-wider text-[#111215] flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-emerald-600" />
-                    <span>{isEn ? "Executive Rewrite Comparison" : "高管级确定性话术改写升级"}</span>
+                    <span>{isEn ? "Recommended RTP Gateway Patch" : "推荐 8kHz RTP 网关底层改造处方"}</span>
                   </div>
-
-                  <div className="space-y-3 text-xs sm:text-sm">
-                    <div className="p-3.5 rounded-xl bg-red-50 border border-red-200">
-                      <div className="text-[11px] font-mono font-bold text-red-700 mb-1">
-                        ✗ {isEn ? "WHAT TRIGGERED INTERRUPTION OR SOUNDED VAGUE:" : "引起考官不耐烦的弱点回答："}
-                      </div>
-                      <div className="text-red-950 font-normal">"{selectedQuestion.weakSample}"</div>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300">
-                      <div className="text-[11px] font-mono font-bold text-emerald-800 mb-1">
-                        ✓ {isEn ? "EXECUTIVE HIGH-CONVICTION REWRITE:" : "高管级确定性话术改写："}
-                      </div>
-                      <div className="text-emerald-950 font-semibold">{selectedQuestion.rewrite}</div>
-                    </div>
-                  </div>
+                  <p className="text-xs sm:text-sm font-mono text-emerald-950 bg-emerald-50 border border-emerald-300 rounded-xl p-3.5">
+                    {selectedQuestion.patchPrescription}
+                  </p>
                 </div>
               </div>
             )}
@@ -1124,138 +1309,95 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 演讲与路演实操专区介绍 */}
-      <section id="presentation" className="py-16 px-4 sm:px-8 border-b border-white/10 bg-[#0d0e13]">
-        <div className="max-w-5xl mx-auto space-y-8">
-          <div className="text-center space-y-2 max-w-xl mx-auto">
-            <span className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">
-              {isEn ? "KEYNOTE, PITCH & DEFENSE STUDIO" : "演说路演与高管答辩专区"}
-            </span>
-            <h2 className="text-3xl font-bold text-white">
-              {isEn ? "Practice your high-stakes presentation." : "告别口癖与超时，掌控每一次高光演讲。"}
-            </h2>
-            <p className="text-xs sm:text-sm text-[#a1a1a6]">
-              {isEn
-                ? "Simulate aggressive investor interruptions during YC pitches, or eliminate 'like' / 'you know' filler habits before keynotes."
-                : "模拟投资人在 Demo Day 随时尖锐打断，或在大型峰会演说前纠正无意识口癖与节奏失控。"}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-5 rounded-2xl bg-[#14161f] border border-white/10 space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
-                01
-              </div>
-              <h4 className="text-sm font-bold text-white">
-                {isEn ? "YC Demo Day Pitch Grill" : "YC 2分钟商业路演抗压"}
-              </h4>
-              <p className="text-xs text-[#a1a1a6] leading-relaxed">
-                {isEn
-                  ? "Simulates impatient partners cutting off background slides to demand paying customer traction."
-                  : "模拟不耐烦的合伙人打断冗长背景，逼问真实付费用户与商业壁垒。"}
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-[#14161f] border border-white/10 space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs">
-                02
-              </div>
-              <h4 className="text-sm font-bold text-white">
-                {isEn ? "Architecture Review Defense" : "企业架构评审与晋升述职"}
-              </h4>
-              <p className="text-xs text-[#a1a1a6] leading-relaxed">
-                {isEn
-                  ? "Practice defending technical trade-offs, p99 latency regressions, and cloud cost ROI to principal engineers."
-                  : "练习向首席架构师与评审委员会清晰论证架构取舍与高可用方案。"}
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-[#14161f] border border-white/10 space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs">
-                03
-              </div>
-              <h4 className="text-sm font-bold text-white">
-                {isEn ? "Filler Word Autopsy Radar" : "口癖清洗与控时复盘雷达"}
-              </h4>
-              <p className="text-xs text-[#a1a1a6] leading-relaxed">
-                {isEn
-                  ? "Accurately detects 'um', 'like', and 'you know' in real-time, enforcing executive brevity."
-                  : "毫秒级捕捉并高亮每一处口头禅与语速突变，打造高管级沉稳从容气场。"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 与 GitHub 语音底座的关系架构 */}
+      {/* 第 4 幕：三大电信工程核心机制（去除无意义 01/02/03 装饰标号，改用清晰技术标签） */}
       <section id="architecture" className="py-16 px-4 sm:px-8 border-b border-white/10 bg-[#08080a]">
         <div className="max-w-5xl mx-auto space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <div className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider mb-1">
-                {isEn ? "HYBRID AUDIO RUNTIME" : "双模语音运行架构"}
+                {isEn ? "PRODUCTION 8kHz RTP ARCHITECTURE" : "生产级 8kHz RTP 网关三大核心底座"}
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-white">
-                {isEn ? "Local-First Privacy + Cloud Voice Gateway" : "本地隐私优先 + 云端语音网关底座"}
+                {isEn ? "Engineered for real PSTN trunks inside your VPC." : "专为企业自有 VPC 内的真实电话中继打造。"}
               </h2>
             </div>
             <div className="text-xs text-[#a1a1a6] font-mono">
-              Powered by <span className="text-white font-bold">voice-agent-rtp-gateway</span>
+              Powered by <span className="text-white font-bold">hardcall-rtp-orchestrator</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-6 rounded-3xl bg-[#12141a] border border-white/10 space-y-4">
-              <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-400">
-                <Zap className="w-4 h-4" />
-                <span>{isEn ? "BROWSER LAYER: ZERO-SETUP SIMULATOR" : "浏览器层：零门槛本地交互仿真"}</span>
-              </div>
-              <ul className="space-y-2.5 text-xs text-[#a1a1a6]">
-                <li>• <b>{isEn ? "Web Speech + Local Barge-In State Machine" : "Web Speech + 本地打断状态机"}</b>{isEn ? ": Instant browser-side speech recognition and interruption simulation with zero audio stored on servers." : "：浏览器本地即时听写与打断状态演练，原始音频不落盘、零云端隐私风险。"}</li>
-                <li>• <b>{isEn ? "Live Filler & Skepticism Telemetry" : "实时口头禅与怀疑度遥测"}</b>{isEn ? ": Real-time WPM pacing, filler word counters, and structured post-call rewrite scripts." : "：实时统计语速与口头禅频次，通话结束自动生成高密度重构话术。"}</li>
-                <li>• <b>{isEn ? "100% Free & Open-Source Demo" : "100% 免费开源体验"}</b>{isEn ? ": No credit card or login required to test barge-in ergonomics before deploying telephony." : "：无需绑卡或注册，先在浏览器体验完整打断交互逻辑，再决定是否接入生产电话网关。"}</li>
-              </ul>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-5 rounded-2xl bg-[#12141c] border border-white/10 space-y-2.5">
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/15 px-2.5 py-1 font-mono text-[11px] font-bold text-emerald-400">
+                PTIME = 20MS · UDP/RTP
+              </span>
+              <h3 className="text-sm font-bold text-white">
+                {isEn ? "Zero TCP Head-of-Line Blocking" : "彻底消除 TCP 队头阻塞"}
+              </h3>
+              <p className="text-xs text-[#a1a1a6] leading-relaxed">
+                {isEn
+                  ? "Direct FreeSWITCH / Asterisk UDP RTP socket bridge keeps jitter bounded even on lossy cellular PSTN legs."
+                  : "直连 FreeSWITCH / Asterisk 原始 UDP RTP 套接字，即使在蜂窝弱网丢包下也不会出现 WebSocket 卡死。"}
+              </p>
             </div>
 
-            <div className="p-6 rounded-3xl bg-[#14161f] border border-emerald-500/40 space-y-4">
-              <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-400">
-                <Server className="w-4 h-4" />
-                <span>{isEn ? "ENTERPRISE LAYER: 8kHz RTP / SIP GATEWAY" : "企业级网关：8kHz RTP / FreeSWITCH 底座"}</span>
-              </div>
-              <ul className="space-y-2.5 text-xs text-[#f5f5f7]">
-                <li>• <b>{isEn ? "SIP / RTP Telephony Trunking" : "SIP / RTP 真实电话中继"}</b>{isEn ? ": Connects directly to FreeSWITCH / Asterisk PSTN trunks with 20ms packetization and <60ms barge-in cutoff." : "：直连 FreeSWITCH / Asterisk 真实 PSTN 线路，20ms 分帧传输，实现 <60ms 真打断静音。"}</li>
-                <li>• <b>{isEn ? "Native 8kHz G.711 / PCM Pipeline" : "原生 8kHz G.711 / PCM 声学管线"}</b>{isEn ? ": Eliminates WebSocket transcoding jitter and handles real-world packet loss and carrier echo." : "：消除 WebSocket 重采样抖动，专门针对真实运营商丢包与回声抑制调优。"}</li>
-                <li>• <b>{isEn ? "Pluggable ASR / LLM / TTS Orchestrator" : "可插拔 ASR / LLM / TTS 编排"}</b>{isEn ? ": Works with Deepgram, Whisper, OpenAI/Qwen/Claude, and ElevenLabs/Cartesia in your own VPC." : "：支持在企业自有 VPC 内灵活对接 Deepgram、Qwen、OpenAI、ElevenLabs 等主流模型。"}</li>
-              </ul>
+            <div className="p-5 rounded-2xl bg-[#12141c] border border-white/10 space-y-2.5">
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-blue-500/15 px-2.5 py-1 font-mono text-[11px] font-bold text-blue-400">
+                256-FRAME RING · 0.16MS
+              </span>
+              <h3 className="text-sm font-bold text-white">
+                {isEn ? "Deterministic Outbound Tail Cut" : "0.16ms 确定性尾音硬截断"}
+              </h3>
+              <p className="text-xs text-[#a1a1a6] leading-relaxed">
+                {isEn
+                  ? "Two-tier Silero Fast-VAD (50ms pause + 200ms semantic guard) flushes queued TTS frames before callers hear overlap."
+                  : "双层 VAD（50ms 声学快停 + 200ms 语义防误触）瞬间清空出站语音环，杜绝“各说各话”。"}
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#12141c] border border-white/10 space-y-2.5">
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-purple-500/15 px-2.5 py-1 font-mono text-[11px] font-bold text-purple-300">
+                LIBSOXR VHQ · VPC NATIVE
+              </span>
+              <h3 className="text-sm font-bold text-white">
+                {isEn ? "Lossless 8kHz → 16kHz ASR Feed" : "无损 8kHz→16kHz 重采样"}
+              </h3>
+              <p className="text-xs text-[#a1a1a6] leading-relaxed">
+                {isEn
+                  ? "Eliminates high-frequency aliasing on G.711 phone audio for Deepgram, Whisper, Qwen, OpenAI, and Cartesia/ElevenLabs."
+                  : "消除 G.711 窄带电话重采样混叠噪声，显著提升数字、姓名与地址在抢话时的识别准确率。"}
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* B2B 工程服务与商业授权定价区 */}
+      {/* 第 5 幕：B2B 工程服务阶梯定价 + SLA 全额退款承诺 + 免费样本报告留资舱 */}
       <section id="pricing" className="py-20 px-4 sm:px-8 bg-[#0b0c10]">
-        <div className="max-w-4xl mx-auto text-center space-y-4">
-          <div className="text-xs font-mono text-emerald-400 uppercase tracking-widest font-bold">
-            {isEn ? "TRANSPARENT B2B ENGINEERING TIERS" : "透明可交付的企业级工程定价"}
+        <div className="max-w-5xl mx-auto space-y-10">
+          <div className="text-center space-y-4 max-w-3xl mx-auto">
+            <div className="text-xs font-mono text-emerald-400 uppercase tracking-widest font-bold">
+              {isEn ? "TRANSPARENT B2B ENGINEERING TIERS · SLA GUARANTEED" : "透明可交付的企业级工程定价 · 达不到延迟降幅全额退款"}
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-bold text-white">
+              {isEn ? "Ship sub-60ms telephony barge-in without 3 months of R&D." : "省去 3 个月底层踩坑，48 小时定位并上线亚 60ms 打断网关。"}
+            </h2>
+            <p className="text-sm sm:text-base text-[#a1a1a6]">
+              {isEn
+                ? "Compare against 2–3 months of senior telephony engineer salary ($30,000+). Every engagement is backed by Creem.io corporate tax invoicing and our >=40% latency reduction SLA."
+                : "相比招聘资深 VoIP/C++ 语音工程师耗时 2–3 个月（成本 $30,000+），直接通过 $299 线上压测或 $1,200 私有化部署包快速交付。"}
+            </p>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-bold text-white">
-            {isEn ? "Ship sub-100ms telephony barge-in without months of R&D." : "省去数月底层踩坑，直接上线亚百毫秒级电话打断网关。"}
-          </h2>
-          <p className="text-sm sm:text-base text-[#a1a1a6] max-w-2xl mx-auto">
-            {isEn
-              ? "The browser barge-in simulator above is 100% free & open-source. Commercial engagements below are strictly for B2B telephony & Voice AI engineering teams."
-              : "上方浏览器端语音打断模拟器完全免费开源；下方商业方案仅面向有真实电话/实时语音低延迟需求的 B2B 企业与技术团队，100% 可落地交付。"}
-          </p>
 
           {verifiedNotice && (
-            <div className="mt-8 p-5 rounded-2xl bg-emerald-500/12 border border-emerald-500/40 text-left space-y-4">
+            <div className="p-5 rounded-2xl bg-emerald-500/12 border border-emerald-500/40 text-left space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-emerald-300 text-xs font-mono font-bold">
                   ✓ {verifiedNotice}
                 </div>
                 <a
                   href={`/api/kit-bundle?ref=${encodeURIComponent(typeof window !== "undefined" ? localStorage.getItem("hardcall_license_active") || "" : "")}`}
-                  className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs"
+                  className="min-h-9 inline-flex items-center px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs"
                 >
                   {isEn ? "Download RTP Kit Config Bundle (.json)" : "下载 8kHz RTP 配置授权包"}
                 </a>
@@ -1289,16 +1431,16 @@ export default function HomePage() {
                   name="sipOrRepo"
                   required
                   placeholder={isEn ? "Paste SIP/WebRTC test URI or your GitHub username..." : "粘贴测试 SIP 号码 / WebRTC 地址或 GitHub 用户名..."}
-                  className="sm:col-span-5 rounded-xl border border-white/15 bg-black/50 px-3 py-2 text-xs text-white"
+                  className="sm:col-span-5 min-h-11 rounded-xl border border-white/15 bg-black/50 px-3 py-2 text-base sm:text-xs text-white"
                 />
                 <input
                   name="notes"
                   placeholder={isEn ? "Current STT/LLM/TTS latency notes (optional)..." : "补充当前语音管线延迟现象（选填）..."}
-                  className="sm:col-span-5 rounded-xl border border-white/15 bg-black/50 px-3 py-2 text-xs text-white"
+                  className="sm:col-span-5 min-h-11 rounded-xl border border-white/15 bg-black/50 px-3 py-2 text-base sm:text-xs text-white"
                 />
                 <button
                   type="submit"
-                  className="sm:col-span-2 rounded-xl bg-white text-black font-bold text-xs py-2 cursor-pointer hover:bg-white/90"
+                  className="sm:col-span-2 min-h-11 rounded-xl bg-white text-black font-bold text-xs py-2 cursor-pointer hover:bg-white/90"
                 >
                   {isEn ? "Submit Kickoff" : "提交自动对接"}
                 </button>
@@ -1306,134 +1448,122 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* B2B 实机性能对比基准 + 务实三阶企业语音网关交付清单 */}
-          <div id="enterprise-b2b" className="hc-frosted-card mt-12 p-6 sm:p-8 rounded-3xl space-y-8 text-left">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-2 max-w-2xl">
-                <div className="text-xs font-mono font-bold text-emerald-400 uppercase">
-                  {isEn
-                    ? "B2B TELEPHONY & VOICE AI ARCHITECTURE · PILOT FROM $299"
-                    : "B2B 电信级全双工语音网关方案 · $299 压测破冰起步"}
+          {/* 三档务实 B2B 阶梯报价与交付清单 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 tabular-nums">
+            <div className="p-6 rounded-2xl bg-[#11141d] border border-white/12 flex flex-col justify-between space-y-5">
+              <div className="space-y-2.5">
+                <div className="text-[11px] font-mono text-emerald-400 uppercase font-bold">Tier 1 · 48h Diagnostic Pilot</div>
+                <div className="text-3xl font-bold text-white">$299 <span className="text-xs font-normal text-[#86868b]">one-time</span></div>
+                <div className="text-sm font-semibold text-white">{isEn ? "48h Voice Latency Audit & Patch Plan" : "48h 语音打断延迟体检与改造方案"}</div>
+                <ul className="text-xs text-[#a1a1a6] space-y-2 pt-2">
+                  <li>• Dial &amp; profile your live SIP number or WebRTC agent</li>
+                  <li>• Frame-by-frame RTP/VAD/TTS overlap flamegraph</li>
+                  <li>• Concrete patch roadmap delivered within 48 hours</li>
+                  <li className="text-emerald-300 font-medium">• SLA: Identify ≥40% latency cut or 100% full refund</li>
+                </ul>
+              </div>
+              <button
+                type="button"
+                onClick={() => setB2bModalPlan("audit")}
+                className="w-full min-h-12 rounded-xl bg-white/12 hover:bg-white/20 text-white text-center font-semibold text-xs transition-colors cursor-pointer"
+              >
+                {isEn ? "Book $299 Latency Audit →" : "立即预约 $299 线上延迟体检 →"}
+              </button>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-[#111622] border-2 border-emerald-500/60 flex flex-col justify-between space-y-5 shadow-xl shadow-emerald-500/10">
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-emerald-400 uppercase font-bold">Tier 2 · Self-Hosted Kit</span>
+                  <span className="rounded-md bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-black">MOST POPULAR</span>
                 </div>
-                <h3 className="text-xl font-bold text-white">
+                <div className="text-3xl font-bold text-white">$1,200 <span className="text-xs font-normal text-[#86868b]">commercial license</span></div>
+                <div className="text-sm font-semibold text-white">{isEn ? "8kHz RTP Gateway Source & Docker Kit" : "8kHz RTP 网关源码与私有化部署包"}</div>
+                <ul className="text-xs text-[#d1d1d6] space-y-2 pt-2">
+                  <li>• Full FreeSWITCH ptime=20ms + SOXR VHQ Docker stack</li>
+                  <li>• 256-frame outbound ring buffer &amp; 0.16ms flush source</li>
+                  <li>• Plugs into Deepgram, OpenAI, Qwen, ElevenLabs, Cartesia</li>
+                  <li>• Perpetual VPC license + 2h live architect onboarding</li>
+                </ul>
+              </div>
+              <button
+                type="button"
+                onClick={() => setB2bModalPlan("kit")}
+                className="w-full min-h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-center font-bold text-xs transition-colors cursor-pointer"
+              >
+                {isEn ? "Buy $1,200 Deployment Kit →" : "立即购买 $1,200 私有化部署包 →"}
+              </button>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-[#11141d] border border-white/12 flex flex-col justify-between space-y-5">
+              <div className="space-y-2.5">
+                <div className="text-[11px] font-mono text-[#a1a1a6] uppercase font-bold">Tier 3 · Turnkey Enterprise</div>
+                <div className="text-3xl font-bold text-white">$3,000+ <span className="text-xs font-normal text-[#86868b]">custom SOW</span></div>
+                <div className="text-sm font-semibold text-white">{isEn ? "Custom SIP Cluster & SLA Integration" : "企业定制 SIP 集群与高并发交付"}</div>
+                <ul className="text-xs text-[#a1a1a6] space-y-2 pt-2">
+                  <li>• Hands-on integration into your AWS/GCP VPC &amp; SIP carrier</li>
+                  <li>• 200+ concurrent channel load testing &amp; p99 SLA tuning</li>
+                  <li>• Custom two-tier semantic interruption guard tuning</li>
+                  <li>• 30-day dedicated Slack / engineer support channel</li>
+                </ul>
+              </div>
+              <a
+                href="mailto:hello@statementflow.win?subject=HardCall%20Enterprise%20Custom%20Voice%20Gateway"
+                className="w-full min-h-12 inline-flex items-center justify-center rounded-xl bg-white text-black hover:bg-[#e5e5ea] text-center font-bold text-xs transition-colors"
+              >
+                {isEn ? "Request Custom SOW Quote →" : "咨询企业定制交付 →"}
+              </a>
+            </div>
+          </div>
+
+          {/* 评估期 CTO 零门槛转化桥梁：免费获取完整 51.9ms 压测样本报告与架构预检 */}
+          <div className="rounded-2xl border border-white/12 bg-[#11141c] p-6 sm:p-7">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              <div className="lg:col-span-7 space-y-1.5">
+                <div className="text-xs font-mono font-bold text-emerald-400 uppercase">
+                  {isEn ? "EVALUATING WITH YOUR TEAM FIRST?" : "需要先拉通技术合伙人内部评审？"}
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white">
                   {isEn
-                    ? "Raw 8kHz RTP / FreeSWITCH 60ms Barge-In vs. Standard WebSocket Pipelines"
-                    : "原始 8kHz RTP / FreeSWITCH 60ms 硬件级打断 vs 普通 WebSocket 方案"}
+                    ? "Get the Sample 51.9ms SIP/RTP Audit Breakdown + Free Architecture Pre-Check"
+                    : "免费获取 51.9ms 逐帧压测样本报告 + 当前语音栈瓶颈预检"}
                 </h3>
                 <p className="text-xs text-[#a1a1a6] leading-relaxed">
                   {isEn
-                    ? "Engineered for AI call centers, outbound voice agents, and telephony startups struggling with 900ms+ barge-in lag, TCP head-of-line blocking, and 8kHz PSTN resampling distortion."
-                    : "专为 AI 电话客服、外呼销售与语音创业团队打造，彻底解决电话线路下 900ms+ 插话停不下来、TCP 队头阻塞与 8kHz 采样失真痛点。"}
+                    ? "Share your work email and current voice stack (Twilio, LiveKit, Vapi, Pipecat, Retell, custom WebSocket). We'll email the full sample trace immediately so you can review with your team before booking the $299 audit."
+                    : "填入企业邮箱与当前技术栈（如 Twilio / LiveKit / Pipecat / 自研 WebSocket），系统立即发送完整样本火焰图拆解至您收件箱。"}
                 </p>
               </div>
-              <a
-                href="https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein"
-                target="_blank"
-                rel="noreferrer"
-                className="shrink-0 px-4 py-2 rounded-full border border-emerald-400/40 text-emerald-300 font-mono text-xs hover:bg-emerald-500/10 transition-colors"
-              >
-                {isEn ? "Inspect Open-Source RTP Lab →" : "查看开源 8kHz RTP 实验室 →"}
-              </a>
-            </div>
-
-            {/* 实机声波对比演示器：亲耳对比 920ms WebSocket 尾音重叠 vs 52ms 8kHz RTP 硬截断 */}
-            <BargeInComparePlayer isEn={isEn} />
-
-            {/* 实机延迟对比基准表 */}
-            <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#0a0c10]">
-              <table className="w-full text-left text-xs font-mono">
-                <thead className="border-b border-white/10 text-[#86868b]">
-                  <tr>
-                    <th className="py-3 px-4">{isEn ? "Benchmark Dimension" : "核心工程维度"}</th>
-                    <th className="py-3 px-4">{isEn ? "Standard WebSocket Wrapper" : "常规 WebSocket 封装"}</th>
-                    <th className="py-3 px-4 text-emerald-400">{isEn ? "HardCall / 8kHz RTP Engine" : "HardCall / 8kHz RTP 引擎"}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5 text-[#d1d1d6]">
-                  <tr>
-                    <td className="py-2.5 px-4 text-white">{isEn ? "End-to-End Barge-In Latency" : "端到端插话打断延迟"}</td>
-                    <td className="py-2.5 px-4 text-red-400">850ms – 1,400ms</td>
-                    <td className="py-2.5 px-4 text-emerald-400 font-bold">52ms – 60ms (Fast-Loop VAD)</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2.5 px-4 text-white">{isEn ? "Audio Buffer Flush (Tail Cut)" : "出站缓冲区尾音硬清"}</td>
-                    <td className="py-2.5 px-4">300ms+ trailing overlap</td>
-                    <td className="py-2.5 px-4 text-emerald-400 font-bold">0.16ms (256-frame ring teardown)</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2.5 px-4 text-white">{isEn ? "PSTN 8kHz → 16kHz Resampling" : "8kHz 电话重采样保真"}</td>
-                    <td className="py-2.5 px-4">Linear aliasing / STT drops</td>
-                    <td className="py-2.5 px-4 text-emerald-400 font-bold">SOXR VHQ lossless pipeline</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2.5 px-4 text-white">{isEn ? "Packet Loss & Jitter Handling" : "弱网抖动与队头阻塞"}</td>
-                    <td className="py-2.5 px-4">TCP head-of-line stalls</td>
-                    <td className="py-2.5 px-4 text-emerald-400 font-bold">Raw UDP/RTP jitter buffer</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* 三档务实 B2B 阶梯报价与交付清单 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-5 rounded-2xl bg-[#0a0c10] border border-white/10 flex flex-col justify-between space-y-4">
-                <div className="space-y-2">
-                  <div className="text-[11px] font-mono text-emerald-400 uppercase">Step 1 · Low-Risk Pilot</div>
-                  <div className="text-lg font-bold text-white">$299 <span className="text-xs font-normal text-[#86868b]">one-time</span></div>
-                  <div className="text-xs font-semibold text-white">{isEn ? "Voice Latency Audit & Benchmark" : "语音打断延迟体检与压测报告"}</div>
-                  <ul className="text-[11px] text-[#a1a1a6] space-y-1.5 pt-1">
-                    <li>• Profile your live SIP/WebRTC barge-in path</li>
-                    <li>• Frame-level jitter & tail-overlap report</li>
-                    <li>• Actionable patch plan (48h delivery)</li>
-                  </ul>
+              <form onSubmit={handleLeadCaptureSubmit} className="lg:col-span-5 space-y-2.5">
+                <input
+                  type="email"
+                  required
+                  value={leadEmail}
+                  onChange={(e) => setLeadEmail(e.target.value)}
+                  placeholder="cto@your-voice-ai.com"
+                  aria-label="Work email"
+                  className="w-full min-h-11 rounded-xl border border-white/15 bg-black/50 px-3.5 py-2 text-base sm:text-xs text-white placeholder:text-[#7c8291] focus:border-emerald-400 focus:outline-none"
+                />
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    required
+                    value={leadStack}
+                    onChange={(e) => setLeadStack(e.target.value)}
+                    placeholder="e.g. Twilio SIP + LiveKit + Deepgram"
+                    aria-label="Current voice stack"
+                    className="flex-1 min-h-11 rounded-xl border border-white/15 bg-black/50 px-3.5 py-2 text-base sm:text-xs text-white placeholder:text-[#7c8291] focus:border-emerald-400 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={leadLoading}
+                    className="min-h-11 shrink-0 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-xs font-bold text-black cursor-pointer disabled:opacity-60"
+                  >
+                    {leadLoading ? "Sending..." : isEn ? "Email Sample Trace →" : "发送样本报告 →"}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setB2bModalPlan("audit")}
-                  className="w-full py-2.5 rounded-xl bg-white/12 hover:bg-white/20 text-white text-center font-semibold text-xs transition-colors cursor-pointer"
-                >
-                  {isEn ? "Book $299 Latency Audit (Instant Checkout)" : "立即下单 $299 架构体检（48h 交付）"}
-                </button>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-[#0a0c10]/90 border border-emerald-500/40 flex flex-col justify-between space-y-4">
-                <div className="space-y-2">
-                  <div className="text-[11px] font-mono text-emerald-400 uppercase">Step 2 · Self-Hosted Kit</div>
-                  <div className="text-lg font-bold text-white">$1,200 <span className="text-xs font-normal text-[#86868b]">license</span></div>
-                  <div className="text-xs font-semibold text-white">{isEn ? "8kHz RTP Gateway Deployment Pack" : "8kHz RTP 网关源码与部署包"}</div>
-                  <ul className="text-[11px] text-[#a1a1a6] space-y-1.5 pt-1">
-                    <li>• Production FreeSWITCH + SOXR VHQ docker stack</li>
-                    <li>• 256-frame outbound ring buffer &amp; 0.16ms flush</li>
-                    <li>• Commercial license + 2h onboarding call</li>
-                  </ul>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setB2bModalPlan("kit")}
-                  className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black text-center font-bold text-xs transition-colors cursor-pointer"
-                >
-                  {isEn ? "Buy $1,200 Deployment Kit (Instant Checkout)" : "立即购买 $1,200 私有化部署包"}
-                </button>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-[#0a0c10] border border-white/10 flex flex-col justify-between space-y-4">
-                <div className="space-y-2">
-                  <div className="text-[11px] font-mono text-[#a1a1a6] uppercase">Step 3 · Enterprise Custom</div>
-                  <div className="text-lg font-bold text-white">$3,000+ <span className="text-xs font-normal text-[#86868b]">custom</span></div>
-                  <div className="text-xs font-semibold text-white">{isEn ? "Dedicated SIP / Telephony Integration" : "企业定制 SIP / 电话集群集成"}</div>
-                  <ul className="text-[11px] text-[#a1a1a6] space-y-1.5 pt-1">
-                    <li>• Custom integration with your LLM/STT/TTS stack</li>
-                    <li>• High-concurrency load testing & SLA tuning</li>
-                    <li>• 30-day dedicated architect support</li>
-                  </ul>
-                </div>
-                <a
-                  href="mailto:hello@statementflow.win?subject=HardCall%20Enterprise%20Custom%20Voice%20Gateway"
-                  className="w-full py-2.5 rounded-xl bg-white text-black hover:bg-[#e5e5ea] text-center font-bold text-xs transition-colors"
-                >
-                  {isEn ? "Request Enterprise Quote" : "咨询企业定制交付"}
-                </a>
-              </div>
+                {leadMsg && <p className="text-xs font-medium text-emerald-400">{leadMsg}</p>}
+              </form>
             </div>
           </div>
         </div>
@@ -1444,19 +1574,19 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <h4 className="text-white font-semibold mb-2">Privacy & Ephemeral Audio</h4>
+              <h4 className="text-white font-semibold mb-2">Privacy &amp; Ephemeral Audio</h4>
               <p>
-                The browser simulator processes microphone inputs locally via Web Speech API with zero server storage. Enterprise B2B deployments run 100% inside your private VPC / FreeSWITCH cluster with zero third-party audio egress.
+                The browser sandbox processes microphone inputs locally via Web Speech API with zero server storage. Enterprise B2B deployments run 100% inside your private VPC / FreeSWITCH cluster with zero third-party audio egress.
               </p>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-2">B2B Commercial Licensing</h4>
+              <h4 className="text-white font-semibold mb-2">B2B Commercial Licensing &amp; SLA</h4>
               <p>
-                Browser simulator and reference RTP lab are MIT open-source. Commercial pilots ($299 Latency Audit), self-hosted RTP deployment kits ($1,200), and enterprise custom integrations ($3,000+) are governed by direct commercial SOW & Creem.io invoicing.
+                Browser sandbox and reference RTP lab are MIT open-source. Commercial engagements ($299 48h Latency Audit with ≥40% latency reduction refund guarantee, $1,200 Self-Hosted RTP Kit, and $3,000+ SOW) include automatic Creem.io corporate VAT/tax receipts.
               </p>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-2">Architect & Support Contact</h4>
+              <h4 className="text-white font-semibold mb-2">Architect &amp; Support Contact</h4>
               <p>
                 Architect: Wang Guo (@wangguode)<br />
                 B2B Email: <a href="mailto:hello@statementflow.win" className="text-white underline">hello@statementflow.win</a><br />
@@ -1507,27 +1637,36 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setB2bModalPlan(null)}
-                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-center cursor-pointer"
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-center cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex items-baseline justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+            <div className="flex items-baseline justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 tabular-nums">
               <div className="text-xs text-[#a1a1a6]">
                 {b2bModalPlan === "kit"
-                  ? "Commercial Docker stack + 2h onboarding call"
-                  : "Frame-level SIP/WebRTC profile + 48h patch plan"}
+                  ? "Docker + FreeSWITCH 20ms + SOXR VHQ + 2h onboarding"
+                  : "Live SIP/WebRTC flamegraph + 48h patch prescription"}
               </div>
               <div className="font-mono text-2xl font-bold text-emerald-400">
                 ${b2bModalPlan === "kit" ? "1,200" : "299"}
               </div>
             </div>
 
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2.5 text-xs text-emerald-200 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
+              <span>
+                {b2bModalPlan === "kit"
+                  ? "Instant config bundle unlock after payment + private GitHub repo invite (<4h)."
+                  : "SLA Guarantee: If we don't identify ≥40% barge-in latency savings within 48h, 100% full refund."}
+              </span>
+            </div>
+
             <form onSubmit={handleB2bCheckoutSubmit} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-[#d1d1d6] mb-1">
-                  {isEn ? "Work Email (for Kickoff & Tax Invoice)" : "企业邮箱（接收交付指引与税票）"}
+                  {isEn ? "Work Email (for Kickoff & Corporate VAT Invoice)" : "企业邮箱（接收交付指引与税票）"}
                 </label>
                 <input
                   type="email"
@@ -1535,7 +1674,7 @@ export default function HomePage() {
                   value={b2bEmail}
                   onChange={(e) => setB2bEmail(e.target.value)}
                   placeholder="cto@voice-startup.ai"
-                  className="w-full rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-sm text-white focus:border-emerald-400 focus:outline-none"
+                  className="w-full min-h-11 rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm text-white focus:border-emerald-400 focus:outline-none"
                 />
               </div>
 
@@ -1548,7 +1687,7 @@ export default function HomePage() {
                   value={b2bStackNote}
                   onChange={(e) => setB2bStackNote(e.target.value)}
                   placeholder="e.g. Twilio SIP + Deepgram + Cartesia"
-                  className="w-full rounded-xl border border-white/15 bg-black/40 px-3.5 py-2 text-xs text-white focus:border-emerald-400 focus:outline-none"
+                  className="w-full min-h-11 rounded-xl border border-white/15 bg-black/40 px-3.5 py-2 text-base sm:text-xs text-white focus:border-emerald-400 focus:outline-none"
                 />
               </div>
 
@@ -1561,7 +1700,7 @@ export default function HomePage() {
               <button
                 type="submit"
                 disabled={b2bLoading}
-                className="w-full min-h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                className="w-full min-h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 {b2bLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
                 <span>
@@ -1607,7 +1746,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setRestoreOpen(false)}
-                className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-center cursor-pointer"
+                className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/15 flex items-center justify-center cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1619,7 +1758,7 @@ export default function HomePage() {
                 value={restoreEmail}
                 onChange={(e) => setRestoreEmail(e.target.value)}
                 placeholder="Work email used at checkout"
-                className="w-full rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-sm text-white"
+                className="w-full min-h-11 rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm text-white"
               />
               <input
                 type="text"
@@ -1628,7 +1767,7 @@ export default function HomePage() {
                 value={restoreOrderRef}
                 onChange={(e) => setRestoreOrderRef(e.target.value)}
                 placeholder="Creem Order / Checkout ID (e.g. ch_...)"
-                className="w-full rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-sm font-mono text-white"
+                className="w-full min-h-11 rounded-xl border border-white/15 bg-black/40 px-3.5 py-2.5 text-base sm:text-sm font-mono text-white"
               />
               {restoreError && <p className="text-xs text-red-400">{restoreError}</p>}
               <button

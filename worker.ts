@@ -137,6 +137,16 @@ async function ensureHcTables(env: Env): Promise<void> {
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )`
     ).run();
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS hc_leads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        work_email TEXT NOT NULL DEFAULT '',
+        voice_stack TEXT NOT NULL DEFAULT '',
+        notes TEXT NOT NULL DEFAULT '',
+        country TEXT NOT NULL DEFAULT 'XX',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )`
+    ).run();
     hcSchemaReady = true;
   } catch {
     // ignore
@@ -565,11 +575,90 @@ const worker = {
       }
       if (!env.DB) return jsonResponse({ ok: false }, 503);
       await ensureHcTables(env);
-      const ordersRes = await env.DB.prepare(
-        `SELECT plan, COUNT(*) AS orders, COALESCE(SUM(amount_usd), 0) AS revenue_usd
-         FROM hc_orders WHERE status = 'completed' GROUP BY plan`
-      ).all();
-      return jsonResponse({ ok: true, orders: ordersRes.results || [] });
+      const [ordersRes, leadsRes] = await Promise.all([
+        env.DB.prepare(
+          `SELECT plan, COUNT(*) AS orders, COALESCE(SUM(amount_usd), 0) AS revenue_usd
+           FROM hc_orders WHERE status = 'completed' GROUP BY plan`
+        ).all(),
+        env.DB.prepare(
+          `SELECT id, work_email, voice_stack, country, created_at FROM hc_leads ORDER BY id DESC LIMIT 25`
+        ).all(),
+      ]);
+      return jsonResponse({ ok: true, orders: ordersRes.results || [], leads: leadsRes.results || [] });
+    }
+
+    if (pathname === "/api/lead-capture" && request.method === "POST") {
+      if (!checkRateLimit(request, "lead_capture", 6)) {
+        return jsonResponse({ ok: false, error: "Too many requests. Please wait 60s." }, 429);
+      }
+      try {
+        const body = (await request.json()) as {
+          email?: string;
+          voiceStack?: string;
+          notes?: string;
+        };
+        const email = (body.email || "").trim().toLowerCase().slice(0, 120);
+        const voiceStack = (body.voiceStack || "").trim().slice(0, 160);
+        const notes = (body.notes || "").trim().slice(0, 600);
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          return jsonResponse({ ok: false, error: "Please enter a valid work email." }, 400);
+        }
+        if (!voiceStack) {
+          return jsonResponse({ ok: false, error: "Please specify your current voice/telephony stack." }, 400);
+        }
+        const country = (request.headers.get("cf-ipcountry") || "XX").slice(0, 8);
+        if (env.DB) {
+          await ensureHcTables(env);
+          await env.DB.prepare(
+            `INSERT INTO hc_leads (work_email, voice_stack, notes, country) VALUES (?1, ?2, ?3, ?4)`
+          )
+            .bind(email, voiceStack, notes, country)
+            .run();
+          await env.DB.prepare(
+            `INSERT INTO hc_funnel_events (event, country, meta_json) VALUES ('b2b_lead_capture', ?1, ?2)`
+          )
+            .bind(country, JSON.stringify({ voiceStack }).slice(0, 240))
+            .run();
+        }
+        await sendHcEmail(env, {
+          to: "hello@statementflow.win",
+          subject: `🎯 [HardCall CTO Lead] ${email} (${voiceStack})`,
+          text: [
+            "New B2B Architecture Pre-Check / Sample Audit Request on HardCall:",
+            `- Work Email: ${email}`,
+            `- Current Stack: ${voiceStack}`,
+            `- Country: ${country}`,
+            `- Notes: ${notes || "(none)"}`,
+          ].join("\n"),
+        });
+        await sendHcEmail(env, {
+          to: email,
+          subject: "HardCall 8kHz RTP Sample Audit Trace & Architecture Pre-Check",
+          text: [
+            "Hi there,",
+            "",
+            `Thanks for sharing your current telephony/voice stack (${voiceStack}).`,
+            "",
+            "Sample 48h SIP/RTP Barge-In Trace Breakdown:",
+            "1. Inbound PSTN G.711 RTP Frame (ptime=20ms): 20.0ms",
+            "2. SOXR VHQ 8kHz -> 16kHz Lossless Resampler: 1.8ms",
+            "3. Local Silero Fast-Loop VAD Speech Onset: 18.0ms",
+            "4. 256-Frame Outbound Ring Buffer Flush (clearAudio): 0.16ms",
+            "=> Total End-to-End Acoustic Barge-In Cutoff: 51.9ms (vs 850ms-1,400ms on standard WebSocket wrappers).",
+            "",
+            "Want us to profile your live SIP number or WebRTC agent? Reply to this email with a test phone number/URI, or book the $299 48h Latency Audit directly at https://hardcall.statementflow.win/#pricing (backed by our >=40% latency reduction or 100% refund SLA).",
+            "",
+            "— Wang Guo, HardCall Voice Architecture",
+          ].join("\n"),
+        });
+        return jsonResponse({
+          ok: true,
+          message:
+            "Sample 51.9ms RTP audit trace sent to your inbox! Reply with a test SIP URI anytime for a pre-check.",
+        });
+      } catch {
+        return jsonResponse({ ok: false, error: "Could not submit request right now." }, 400);
+      }
     }
 
     if (pathname === "/api/checkout" && request.method === "POST") {
