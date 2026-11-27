@@ -1,78 +1,45 @@
 <div align="center">
 
-# 🎙️ HardCall // 52ms 毫秒级实时打断 AI 高压语音面试与演说路演模拟器
-### (ChatGPT Is Polite. Real Interviewers Interrupt — High-Pressure AI Voice Simulator)
+# 🎙️ HardCall RTP // 52ms 电信级 8kHz PSTN/SIP 全双工语音打断网关与压测实验室
+### 终结 900ms+ WebSocket 尾音抢话碰撞 · 51.96ms P95 毫秒级确定性截断架构
 
-[![Cloudflare Pages](https://img.shields.io/badge/Live_Demo-Cloudflare_Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://hardcall.statementflow.win)
-[![Zhihu](https://img.shields.io/badge/知乎-@王果ai_(1.2w+_关注)-0084FF?style=flat-square&logo=zhihu&logoColor=white)](https://www.zhihu.com/people/wang-guo-ha-53)
-[![Swift 6](https://img.shields.io/badge/Native_Client-Swift_6_+_Speech-FA7343?style=flat-square&logo=swift&logoColor=white)](https://github.com/wangguode/hardcall)
-[![Next.js 16](https://img.shields.io/badge/Web_Studio-Next.js_16_Static-000000?style=flat-square&logo=next.js&logoColor=white)](https://hardcall.statementflow.win)
-[![Barge-In](https://img.shields.io/badge/Barge--In_Latency-52ms-EF4444?style=flat-square)](https://github.com/wangguode/ai-agent-voice)
+[![在线声波对比](https://img.shields.io/badge/在线压测台-hardcall.statementflow.win-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://hardcall.statementflow.win)
+[![RTP 开源实验室](https://img.shields.io/badge/8kHz_RTP_参考实现-ai--agent--voice-10B981?style=flat-square)](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein)
+[![P95 截断延迟](https://img.shields.io/badge/P95_打断延迟-51.96ms-EF4444?style=flat-square)](https://hardcall.statementflow.win/#enterprise-b2b)
 
-[🌐 在线体验 (Live Web Demo)](https://hardcall.statementflow.win) · [📖 知乎专栏 (@王果ai)](https://www.zhihu.com/people/wang-guo-ha-53) · [🧠 AI Agent 与语音工程知识库](https://github.com/wangguode/ai-agent-voice) · [🧩 知枢智能体 (Zhishu Agent)](https://github.com/wangguode/zhishu-agent)
+[🇺🇸 English](./README.md) | **🇨🇳 简体中文** · [🌐 在线 52ms vs 920ms 声波对比](https://hardcall.statementflow.win) · [☎️ 8kHz RTP 开源参考库](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein)
 
 </div>
 
 ---
 
-## 1. 为什么做这个项目？（核心痛点破局）
+## 1. 为什么常规 WebSocket 语音 Agent 一上真实电话线就被挂断？
 
-市面上普通的 AI 聊天机器人（如默认模式下的 ChatGPT）**过于礼貌**——当你用大量的口头禅（`um`、`like`、`那个`、`然后`）啰嗦铺垫 3 分钟却没有任何量化指标时，它依然会耐心地听完并夸奖你。
+常规语音 AI 封装在 TCP/WebSocket 上预缓冲数十个 TTS 音频分片。当车险报案客户、急诊分诊患者或银行持卡人在播报中途开口插话时：
+1. **900ms+ 尾音抢话碰撞**：TCP 队头阻塞与出站缓冲未及时排空，导致 AI 继续压着客户说话近 1 秒，引发客户烦躁挂机。
+2. **8kHz G.711 线性重采样混叠失真**：窄带电话 `8kHz` 粗糙上采样至 `16kHz` 会造成高频混叠，导致抢话期间保单号、邮编与金额数字识别错误率飙升。
+3. **背景咳嗽/杂音误打断**：单层阈值 VAD 遇到轻微咳嗽便整句掐断回复。
 
-但在真实的**大厂终面（FAANG Behavioral / System Design）**、**高管晋升答辩**或 **YC 投资人路演（Pitch）**中，只要你在前 12~15 秒内没有切入核心结论或缺乏数据支撑，考官和投资人会**毫不留情地直接开口打断你（Barge-In）**。
-
-**HardCall** 专为“高压实时语音对抗”而生：
-- **52ms 毫秒级实时抢话打断**：实时监测你的语音流与增量文本，一旦检测到口水话、逻辑发散或缺乏量化数据，立即在句中强行打断并发起尖锐追问。
-- **双端同源架构（Web 在线舱 + Apple 原生客户端）**：既支持零门槛浏览器麦克风直连体验，又提供基于 `Swift 6 + AVAudioEngine + SFSpeechRecognizer` 的 macOS/iOS 原生客户端（支持 AirPods 免提对抗）。
-- **LeetCode 式结构化题库**：内置大厂行为面试、高并发系统设计答辩、薪资谈判破局、演说与路演 4 大专项训练场。
-
----
-
-## 2. 全栈系统架构图（双端语音舱 + 52ms 实时打断状态机）
-
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/architecture-dark.svg">
-    <img alt="HardCall Full-Stack Architecture" src="./docs/assets/architecture-light.svg" width="100%">
-  </picture>
-</p>
-
-> 架构遵循 AgentScope 2.0 工业级全景架构范式，涵盖左侧 WebRTC/AVAudioEngine 音频协议与多端实时语音舱、顶部 Cloudflare Edge 与环形音频缓冲区基础设施、中上部 4 大 LeetCode 式高压对抗题库与品牌核心、中央 52ms Barge-In 抢话截断状态机与尸检引擎、右侧打断核心与复盘工具链，以及底部运行时可观测体系。支持随 GitHub 主题自动在明亮/暗色模式间切换。
-
-### 界面实机预览与 52ms 实时抢话打断演示 (Live Studio Demo)
-
-<p align="center">
-  <img src="./docs/assets/hardcall-bargein-demo.gif" alt="HardCall 52ms Barge-In Live Demo" width="100%" />
-</p>
-
-> **动态演示流程**：选择高压题库 ➔ 拨号连线 ➔ 考官严厉发问 ➔ **考生出现口水套话瞬间触发 52ms 强行抢话打断并爆红告警** ➔ 提交硬核量化数据通过考核 ➔ 挂断通话生成 3 轴镇定度雷达图与弱句 vs $200K+ 高管重写对照。
+**HardCall RTP** 从传输层与音频 DSP 底层彻底根除上述瓶颈：
+- **精确至 `51.96ms` 的五段帧预算**：`20.0ms` UDP/RTP (`ptime=20ms`) + `12.0ms` 自适应抖动缓冲 + `1.8ms` `libsoxr` VHQ 无损重采样 + `18.0ms` 本地 Silero Fast-VAD + `0.16ms` 256 帧出站环形缓冲区瞬时清零。
+- **50ms / 200ms 双层声学语义防误触**：`50ms` 声学快停瞬间静音出站帧，`200ms` 语义确认门区分短暂咳嗽与真实插话。
+- **100% 企业自有 VPC 零外泄运行**：直接对接 FreeSWITCH / Asterisk / Twilio Elastic SIP / Telnyx，通话音频永不经过第三方中转服务器。
 
 ---
 
-## 3. LeetCode 式 4 大结构化高压训练题库
+## 2. 企业级工程服务阶梯报价（Creem.io 全球合规收单）
 
-| 题库分类 | 典型高压场景题目 | 考官打断触发条件 (Barge-In Triggers) |
-| :--- | :--- | :--- |
-| **01. 大厂行为面试**<br>*(FAANG Behavioral)* | • 生产环境 P0 级故障复盘与个人决策<br>• 与资深 Tech Lead 发生架构分歧时的推进 | 铺垫背景超过 15 秒未进入行动点、使用模糊词（“我们团队大概做了…”）、缺乏故障恢复时长（MTTR）量化指标 |
-| **02. 系统设计答辩**<br>*(System Design Defense)* | • 80,000 QPS 支付网关幂等性与防重设计<br>• 第三方 Webhook 瞬时丢包与背压削峰 | 只背诵通用八股文（“加个 Redis 缓存”）、未说明分布式锁过期与脑裂边界、未给出延迟 P99 数字 |
-| **03. 薪资与职级谈判**<br>*(Salary Negotiation)* | • 突破 $160K 薪资上限的筹码博弈<br>• 无競对 Offer 时的股票/签字费谈判 | 语气犹豫道歉（`I was hoping maybe...`）、自降底牌、用个人生活成本代替商业产出价值 |
-| **04. 演说与路演训练**<br>*(Keynote & Pitch Drills)* | • YC Demo Day 120 秒极速电梯路演<br>• 面向 CTO 的季度核心架构演进汇报 | 前 10 秒未讲清产品一句话定位、滥用未定义的行话缩写、缺乏核心增长率或成本下降百分比 |
+- **`$299` — 48 小时线上语音延迟体检与改造方案**：实测贵司线上 SIP 号码或 WebRTC 节点，48 小时内交付逐帧 RTP/VAD/TTS 火焰图诊断书与补丁路线图（**SLA 承诺：未能定位 ≥40% 延迟降幅无条件全额退款；30 天内升级 `$1,200` 部署包可 100% 全额抵扣**）。
+- **`$1,200` — 8kHz RTP 网关源码与 Docker 私有化部署包**：含多并发 FreeSWITCH `ptime=20ms` + `libsoxr` VHQ 生产级容器栈、256 帧无锁语音环源码、永久商业 VPC 授权与 2 小时架构师实机联调。
+- **`$3,000+` — 企业定制 SIP 集群与高并发交付**：200+ 并发通道压测调优与 30 天专属技术支持。
+- **商务联系**：`hello@statementflow.win`
 
 ---
 
-## 4. 快速启动与部署指南 (Quick Start & Deployment)
-
-### 本地运行 Web 语音工作台
+## 3. 本地开发与 Cloudflare Workers 部署
 
 ```bash
 npm install
 npm run dev
+npm run build && npx wrangler deploy
 ```
-浏览器打开 `http://localhost:3000` 即可直接使用麦克风或文本模拟模式进行高压对练。
-
-### Cloudflare Workers / Pages 部署配置
-
-仓库已内置 `wrangler.json` 与静态导出配置（`output: 'export'`）：
-- **Build command**: `npm run build`
-- **Build output directory**: `out`
-- **Node.js version**: `20+`

@@ -1,90 +1,64 @@
 <div align="center">
 
-# 🎙️ HardCall // 60ms 8kHz RTP Voice Barge-In Gateway & Open-Source Simulator
-### Sub-60ms PSTN/SIP Telephony Interruption Architecture vs. 900ms+ WebSocket Lag
+# 🎙️ HardCall RTP // 52ms 8kHz PSTN/SIP Voice Barge-In Gateway & Audio Lab
+### Sub-60ms Full-Duplex Telephony Interruption Engine vs. 900ms+ WebSocket Wrapper Lag
 
-[![Live Demo](https://img.shields.io/badge/Live_Simulator-hardcall.statementflow.win-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://hardcall.statementflow.win)
-[![B2B RTP Lab](https://img.shields.io/badge/Telephony_8kHz_RTP-ai--agent--voice-10B981?style=flat-square)](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein)
-[![Barge-In](https://img.shields.io/badge/RTP_Barge--In_Cutoff-<60ms-EF4444?style=flat-square)](https://hardcall.statementflow.win#enterprise-b2b)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](./LICENSE)
+[![Live Benchmark](https://img.shields.io/badge/Live_Audio_Lab-hardcall.statementflow.win-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://hardcall.statementflow.win)
+[![RTP Reference](https://img.shields.io/badge/8kHz_RTP_Primitives-ai--agent--voice-10B981?style=flat-square)](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein)
+[![Barge-In P95](https://img.shields.io/badge/P95_Cutoff_Latency-51.96ms-EF4444?style=flat-square)](https://hardcall.statementflow.win/#enterprise-b2b)
+[![License](https://img.shields.io/badge/Sandbox_License-MIT-blue?style=flat-square)](./LICENSE)
 
-**🇺🇸 English** | [🇨🇳 简体中文](./README.zh-CN.md) · [🌐 Live Barge-In Simulator](https://hardcall.statementflow.win) · [☎️ 8kHz RTP Telephony Lab](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein) · [📖 Architecture Deep-Dive (DEV.to)](https://dev.to/wangguode/why-turn-based-voice-ai-feels-broken-building-a-52ms-barge-in-loop-hardcall-9pc)
+**🇺🇸 English** | [🇨🇳 简体中文](./README.zh-CN.md) · [🌐 Live 52ms vs 920ms Audio Benchmark](https://hardcall.statementflow.win) · [☎️ Open-Source RTP Reference](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein)
 
 </div>
 
-> **Transparent Architecture & Commercial Scope**:
-> - **Free Open-Source Web Simulator (`hardcall.statementflow.win`)**: 100% free browser-based interactive barge-in & cadence simulator (Web Speech API + adversarial drills, zero login or credit card required).
-> - **B2B Enterprise Telephony Engineering (8kHz RTP / FreeSWITCH)**: Production raw 8kHz RTP + FreeSWITCH + SOXR VHQ resampling + 256-frame outbound ring buffer (`0.16ms` flush) lives in [ai-agent-voice/01-voice-agent-rtp-bargein](https://github.com/wangguode/ai-agent-voice/tree/main/01-voice-agent-rtp-bargein).
->   - **$299** — 48h Voice Latency Audit Pilot (SIP/WebRTC bottleneck diagnosis & patch plan)
->   - **$1,200** — Self-Hosted 8kHz RTP Deployment Kit (commercial license + Docker stack)
->   - **$3,000+** — Custom Enterprise SIP/FreeSWITCH Integration & 30-day architecture support
->   - B2B Contact: `hello@statementflow.win` / `hello@statementflow.win`
+---
+
+## 1. Why WebSocket Voice Wrappers Fail on Real PSTN Phone Trunks
+
+Standard voice AI stacks stream TTS audio over TCP/WebSockets with 40–60 buffered chunks in flight. When an impatient insurance policyholder, clinic patient, or banking caller interrupts mid-sentence:
+1. **900ms+ Double-Talk Collision**: TCP head-of-line stalls and buffered WebSocket frames cause the bot to keep talking over the human caller for nearly a full second.
+2. **8kHz G.711 Linear Resampling Aliasing**: Naive linear upsampling from narrowband `8kHz` PSTN audio to `16kHz` ASR degrades digit, zip-code, and name accuracy during double-talk.
+3. **Transient Noise False Triggers**: Single-threshold VAD aborts whole TTS responses on background coughs or road noise.
+
+**HardCall RTP** solves telephony turn-taking at the transport and DSP layer:
+- **Exact `51.96ms` P95 Cutoff Budget**: `20.0ms` UDP/RTP (`ptime=20ms`) + `12.0ms` adaptive jitter buffer + `1.8ms` `libsoxr` VHQ lossless resampling + `18.0ms` local Silero Fast-VAD + `0.16ms` 256-frame outbound ring buffer teardown.
+- **Two-Tier Acoustic + Semantic Guard**: `50ms` fast acoustic mute pauses outbound frames immediately while a `200ms` confirmation gate filters transient coughs from real caller speech.
+- **100% Private VPC Execution**: Runs directly alongside FreeSWITCH / Asterisk / Twilio Elastic SIP / Telnyx inside your AWS or GCP VPC with zero third-party audio egress.
 
 ---
 
-## 1. Why HardCall?
+## 2. Interactive WebAudio Barge-In Lab (`hardcall.statementflow.win`)
 
-Standard voice AI assistants (like ChatGPT Voice) are **too polite**. You can ramble with filler words (`um`, `like`, `uh`) for three minutes without giving a single metric, and the bot will patiently wait until you finish and compliment your answer.
-
-In real **FAANG Behavioral / System Design interviews**, **executive promotion reviews**, or **YC investor pitches**, if you fail to state your core thesis or metrics within the first 12–15 seconds, the interviewer **cuts you off mid-sentence (Barge-In)**.
-
-**HardCall** is engineered for high-pressure, full-duplex adversarial voice simulation:
-- **52ms End-to-End Barge-In SLA**: Decouples acoustic interruption from slow cloud STT round-trips. Runs local frame-level VAD over a 256-frame circular buffer and executes a 0.16ms Web Audio hardware buffer flush (`gain.setValueAtTime(0)` + source teardown) to eliminate trailing audio overlap.
-- **Dual-Client Architecture (Web Studio + Native macOS/iOS)**: Instant zero-key browser microphone mode, plus a native `Swift 6 + AVAudioEngine + SFSpeechRecognizer` Apple client (AirPods hands-free ready).
-- **LeetCode-Style Adversarial Drills**: Structured tracks for FAANG Behavioral, 80K QPS System Design Defense, Salary Negotiation, and YC 120s Keynote Pitching.
+Test directly in your browser with zero login or API keys:
+- **A/B Waveform Proof**: Hear identical PSTN caller interruptions under `920ms` Legacy WebSocket buffering vs. `52ms` HardCall Raw RTP ring flush.
+- **Live Microphone RMS VAD Sandbox**: Arm your real microphone (or trigger deterministic SIP frames) against an active 8kHz G.711 outbound voice stream and export JSON benchmark traces for your engineering team.
 
 ---
 
-## 2. Full-Stack Architecture (Dual-Client Cockpit + 52ms Barge-In State Machine)
+## 3. Commercial B2B Engineering Tiers (Creem.io MoR · Corporate VAT Invoices)
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/architecture-dark.svg">
-    <img alt="HardCall Full-Stack Architecture" src="./docs/assets/architecture-light.svg" width="100%">
-  </picture>
-</p>
-
-### Live Studio & 52ms Barge-In Demo
-
-<p align="center">
-  <img src="./docs/assets/hardcall-bargein-demo.gif" alt="HardCall 52ms Barge-In Live Demo" width="100%" />
-</p>
-
-> **Demo Flow**: Select drill track ➔ Connect call ➔ Interviewer asks sharp prompt ➔ **Filler words / rambling immediately trigger a 52ms red-alert barge-in interruption** ➔ Provide hard metrics to pass ➔ Hang up for a 3-axis composure radar & weak-sentence vs. $200K+ executive rewrite autopsy.
+- **`$299` — 48h Voice Latency Audit & Flamegraph**: We dial and profile your live SIP number or WebRTC endpoint, delivering a stage-by-stage RTP/VAD/TTS overlap flamegraph and concrete patch roadmap within 48 hours (**SLA: ≥40% latency reduction identified or 100% full refund; 100% credited toward the `$1,200` Kit within 30 days**).
+- **`$1,200` — Self-Hosted 8kHz RTP Gateway Deployment Kit**: Production multi-channel FreeSWITCH `ptime=20ms` + `libsoxr` VHQ Docker stack, 256-frame lock-free ring buffer source, perpetual commercial VPC license, and 2h live architect onboarding.
+- **`$3,000+` — Custom Enterprise SIP Cluster & SOW**: Hands-on AWS/GCP VPC deployment, 200+ concurrent channel load tuning, and 30-day dedicated engineering support.
+- **Contact**: `hello@statementflow.win`
 
 ---
 
-## 3. Four Structured High-Pressure Drill Tracks
-
-| Track | Sample High-Pressure Scenarios | Barge-In Trigger Conditions |
-| :--- | :--- | :--- |
-| **01. FAANG Behavioral** | • Production P0 outage postmortem & ownership<br>• Resolving architecture deadlocks with a Staff/Principal Lead | Rambling >15s without action items, vague pronouns ("we kind of..."), missing MTTR metrics |
-| **02. System Design Defense** | • 80,000 QPS payment gateway idempotency<br>• Webhook burst packet loss & backpressure shedding | Generic textbook buzzwords ("just add Redis"), ignoring distributed lock TTL / split-brain, missing P99 latency numbers |
-| **03. Salary Negotiation** | • Breaking through a $160K base cap<br>• Negotiating equity / sign-on without a competing offer | Apologetic hedging (`I was hoping maybe...`), anchoring low, citing personal expenses instead of business impact |
-| **04. Keynote & Pitch Drills** | • YC Demo Day 120s elevator pitch<br>• Quarterly core architecture review to CTO | Failing to define the product in the first 10s, undefined jargon, missing growth or cost-reduction percentages |
-
----
-
-## 4. Quick Start & Deployment
-
-### Run the Web Studio Locally
+## 4. Local Development & Cloudflare Workers Deployment
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open `http://localhost:3000` in your browser to test immediately in live microphone or text-simulation mode (zero API keys required).
+Build static assets and deploy with Wrangler:
 
-### Cloudflare Workers / Pages Deployment
-
-Pre-configured with `wrangler.json` and static export (`output: 'export'`):
-- **Build command**: `npm run build`
-- **Build output directory**: `out`
-- **Node.js version**: `20+`
-
----
+```bash
+npm run build
+npx wrangler deploy
+```
 
 ## License
 
-[MIT](./LICENSE) © 2026 Wang Guo (`wangguode`)
+Browser sandbox & UI licensed under **MIT** © 2026 Wang Guo (`@wangguode`).

@@ -10,12 +10,13 @@ interface Props {
 type TrackMode = "ws" | "rtp";
 
 /**
- * 真实 8kHz PSTN 电话带通（300Hz–3400Hz）英语双讲打断录音对比器：
- * 直观试听 Legacy WebSocket (920ms AI 与来电者语音刺耳重叠) vs 8kHz Raw RTP (52ms 环形缓冲瞬间清零与自然接话)
+ * 8kHz PSTN 电话带通（300Hz–3400Hz）双讲打断基准对比播放器：
+ * 真实对应车险理赔报案录音（ws-920ms-overlap.mp3 vs rtp-52ms-clean.mp3），支持高分屏 DPR 锐利波形渲染
  */
 export default function BargeInComparePlayer({ isEn }: Props) {
   const [playingMode, setPlayingMode] = useState<TrackMode | null>(null);
   const [progressMs, setProgressMs] = useState<number>(0);
+  const [resizeCount, setResizeCount] = useState<number>(0);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -27,7 +28,7 @@ export default function BargeInComparePlayer({ isEn }: Props) {
   const TOTAL_RTP_MS = 3800;
   const BARGE_IN_AT_MS = 1400;
   const WS_TAIL_MS = 920;
-  const RTP_CUT_MS = 52;
+  const RTP_CUT_MS = 51.96;
 
   const stopPlayback = () => {
     if (rafRef.current) {
@@ -40,7 +41,7 @@ export default function BargeInComparePlayer({ isEn }: Props) {
         audioElRef.current.currentTime = 0;
         audioElRef.current.src = "";
       } catch {
-        // ignore
+        // 忽略音频元素释放异常
       }
       audioElRef.current = null;
     }
@@ -53,10 +54,15 @@ export default function BargeInComparePlayer({ isEn }: Props) {
   };
 
   useEffect(() => {
-    return () => stopPlayback();
+    const onResize = () => setResizeCount((c) => c + 1);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      stopPlayback();
+    };
   }, []);
 
-  // 绘制双轨静态/动态示波器波形（含插话打断点、尾音重叠区与 RTP 52ms 净断回复区）
+  // 按 devicePixelRatio 物理像素缩放绘制双轨动态示波器波形
   useEffect(() => {
     const drawWave = (
       canvas: HTMLCanvasElement | null,
@@ -66,37 +72,48 @@ export default function BargeInComparePlayer({ isEn }: Props) {
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
-      const w = canvas.width;
-      const h = canvas.height;
+
+      const rect = canvas.getBoundingClientRect();
+      const cssW = Math.max(240, Math.round(rect.width || 460));
+      const cssH = 78;
+      const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 3) : 1;
+      const targetW = Math.round(cssW * dpr);
+      const targetH = Math.round(cssH * dpr);
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
       const totalMs = mode === "ws" ? TOTAL_WS_MS : TOTAL_RTP_MS;
-      ctx.clearRect(0, 0, w, h);
+      ctx.clearRect(0, 0, cssW, cssH);
 
       // 背景中心轴线
       ctx.strokeStyle = "rgba(255,255,255,0.06)";
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(0, h / 2);
-      ctx.lineTo(w, h / 2);
+      ctx.moveTo(0, cssH / 2);
+      ctx.lineTo(cssW, cssH / 2);
       ctx.stroke();
 
-      const bargeX = (BARGE_IN_AT_MS / totalMs) * w;
+      const bargeX = (BARGE_IN_AT_MS / totalMs) * cssW;
       const tailEndMs = BARGE_IN_AT_MS + (mode === "ws" ? WS_TAIL_MS : RTP_CUT_MS);
-      const tailEndX = (tailEndMs / totalMs) * w;
+      const tailEndX = (tailEndMs / totalMs) * cssW;
 
-      // 高亮尾音重叠区间（WS 红色长尾碰撞 vs RTP 极窄绿线净断）
+      // 高亮尾音重叠区间（WS 920ms 红色碰撞带 vs RTP 51.96ms 极窄绿线净断）
       ctx.fillStyle =
         mode === "ws"
           ? "rgba(239, 68, 68, 0.24)"
           : "rgba(16, 185, 129, 0.30)";
-      ctx.fillRect(bargeX, 0, Math.max(3, tailEndX - bargeX), h);
+      ctx.fillRect(bargeX, 0, Math.max(3, tailEndX - bargeX), cssH);
 
       const bars = 96;
       for (let i = 0; i < bars; i++) {
         const tMs = (i / bars) * totalMs;
-        const x = (i / bars) * w;
-        const barW = Math.max(2, w / bars - 1.5);
+        const x = (i / bars) * cssW;
+        const barW = Math.max(1.5, cssW / bars - 1.5);
 
-        // AI 语音能量：在 tailEndMs 前输出；RTP 模式下在 2650ms 后快速给出接话响应
+        // AI 语音能量：在 tailEndMs 前输出；RTP 模式下在 2680ms 后快速播报拖车调度回复
         const aiInitial = tMs < tailEndMs;
         const aiTurnReply = mode === "rtp" && tMs >= 2680 && tMs <= 3720;
         const aiAmp = aiInitial
@@ -106,7 +123,7 @@ export default function BargeInComparePlayer({ isEn }: Props) {
           ? 0.26 + 0.42 * Math.abs(Math.sin(i * 0.78 + 0.4))
           : 0.03;
 
-        // 来电者插话能量（1400ms – 2620ms）
+        // 来电者 1.4s 插话能量（"Stop! Skip the script—is tow unit 4819 dispatched?!"）
         const userActive = tMs >= BARGE_IN_AT_MS && tMs <= 2620;
         const userAmp = userActive
           ? 0.34 + 0.48 * Math.abs(Math.sin(i * 0.91 + 1.2))
@@ -120,14 +137,14 @@ export default function BargeInComparePlayer({ isEn }: Props) {
               : mode === "rtp"
               ? "#34d399"
               : "#94a3b8";
-          const bh = aiAmp * (h * 0.42);
-          ctx.fillRect(x, h / 2 - bh, barW, bh);
+          const bh = aiAmp * (cssH * 0.42);
+          ctx.fillRect(x, cssH / 2 - bh, barW, bh);
         }
 
         if (userAmp > 0.04) {
           ctx.fillStyle = "#38bdf8";
-          const bh = userAmp * (h * 0.42);
-          ctx.fillRect(x, h / 2 + 1, barW, bh);
+          const bh = userAmp * (cssH * 0.42);
+          ctx.fillRect(x, cssH / 2 + 1, barW, bh);
         }
       }
 
@@ -137,25 +154,25 @@ export default function BargeInComparePlayer({ isEn }: Props) {
       ctx.setLineDash([4, 3]);
       ctx.beginPath();
       ctx.moveTo(bargeX, 0);
-      ctx.lineTo(bargeX, h);
+      ctx.lineTo(bargeX, cssH);
       ctx.stroke();
       ctx.setLineDash([]);
 
       // 实时播放游标
       if (activeMs !== null && activeMs > 0) {
-        const px = Math.min(w, (activeMs / totalMs) * w);
+        const px = Math.min(cssW, (activeMs / totalMs) * cssW);
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(px, 0);
-        ctx.lineTo(px, h);
+        ctx.lineTo(px, cssH);
         ctx.stroke();
       }
     };
 
     drawWave(canvasWsRef.current, "ws", playingMode === "ws" ? progressMs : null);
     drawWave(canvasRtpRef.current, "rtp", playingMode === "rtp" ? progressMs : null);
-  }, [playingMode, progressMs]);
+  }, [playingMode, progressMs, resizeCount]);
 
   const playSynthFallback = (mode: TrackMode) => {
     const totalMs = mode === "ws" ? TOTAL_WS_MS : TOTAL_RTP_MS;
@@ -169,12 +186,17 @@ export default function BargeInComparePlayer({ isEn }: Props) {
 
       const aiEndSec = (BARGE_IN_AT_MS + (mode === "ws" ? WS_TAIL_MS : RTP_CUT_MS)) / 1000;
       const aiOsc = ctx.createOscillator();
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = "bandpass";
+      bandpass.frequency.setValueAtTime(1100, now);
+      bandpass.Q.setValueAtTime(1.2, now);
       const aiGain = ctx.createGain();
       aiOsc.type = "triangle";
       aiOsc.frequency.setValueAtTime(220, now);
       aiGain.gain.setValueAtTime(0.12, now);
       aiGain.gain.exponentialRampToValueAtTime(0.0001, now + aiEndSec);
-      aiOsc.connect(aiGain);
+      aiOsc.connect(bandpass);
+      bandpass.connect(aiGain);
       aiGain.connect(ctx.destination);
       aiOsc.start(now);
       aiOsc.stop(now + aiEndSec + 0.02);
@@ -248,25 +270,28 @@ export default function BargeInComparePlayer({ isEn }: Props) {
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0a0c10] p-5 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
-          <Volume2 className="w-4 h-4" />
+    <div className="rounded-2xl border border-white/10 bg-[#0a0c10] p-4 sm:p-5 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex items-start sm:items-center gap-2 text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
+          <Volume2 className="w-4 h-4 shrink-0 mt-0.5 sm:mt-0" />
           <span>
             {isEn
-              ? "REAL 8KHZ PSTN VOICE RECORDING — HEAR 920MS DOUBLE-TALK VS 52MS CUTOFF"
-              : "真实 8kHz PSTN 英语通话实录 — 亲耳对比 920ms 抢话撞车 vs 52ms 瞬间净断"}
+              ? "8KHZ PSTN BANDPASS VOICE BENCHMARK — HEAR 920MS DOUBLE-TALK VS 52MS CUTOFF"
+              : "8KHZ PSTN 带通语音基准实测 — 亲耳对比 920MS 双讲撞车 VS 52MS 瞬间净断"}
           </span>
         </div>
-        <div className="flex items-center gap-3 text-[11px] font-mono text-[#86868b]">
-          <span className="inline-flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" /> AI Agent (8kHz)
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] font-mono text-[#86868b]">
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            {isEn ? "AI Claims IVR (8kHz)" : "AI 理赔坐席 (8kHz)"}
           </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-sky-400" /> Caller Barge-In @ 1.4s
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
+            <span className="w-2 h-2 rounded-full bg-sky-400" />
+            {isEn ? "Caller Barge-In @ 1.4s" : "1.4s 来电者插话"}
           </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-red-400" /> 920ms Collision
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
+            <span className="w-2 h-2 rounded-full bg-red-400" />
+            {isEn ? "920ms Collision" : "920ms 尾音撞车"}
           </span>
         </div>
       </div>
@@ -274,11 +299,13 @@ export default function BargeInComparePlayer({ isEn }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Track A: Legacy WebSocket */}
         <div className="rounded-xl border border-red-500/25 bg-[#121015] p-4 space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <div>
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5">
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5 text-xs font-bold text-red-400">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span>{isEn ? "Legacy WebSocket / TCP Telephony" : "传统 WebSocket / TCP 语音链路"}</span>
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">
+                  {isEn ? "Legacy WebSocket / TCP Telephony" : "传统 WebSocket / TCP 语音链路"}
+                </span>
               </div>
               <div className="text-[11px] font-mono text-[#a1a1a6]">
                 {isEn ? "920ms AI + Caller double-talk collision" : "来电者打断后 AI 仍继续念稿 920ms"}
@@ -287,56 +314,74 @@ export default function BargeInComparePlayer({ isEn }: Props) {
             <button
               type="button"
               onClick={() => playComparison("ws")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-xs font-mono font-semibold cursor-pointer transition"
+              className="min-h-10 shrink-0 whitespace-nowrap inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-xs font-mono font-semibold cursor-pointer transition"
             >
-              {playingMode === "ws" ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-              <span>{playingMode === "ws" ? (isEn ? "Stop" : "停止") : (isEn ? "Hear 920ms Overlap" : "试听 920ms 撞车")}</span>
+              {playingMode === "ws" ? <Square className="w-3.5 h-3.5 shrink-0" /> : <Play className="w-3.5 h-3.5 shrink-0" />}
+              <span>
+                {playingMode === "ws"
+                  ? isEn
+                    ? "Stop"
+                    : "停止"
+                  : isEn
+                  ? "Hear 920ms Overlap"
+                  : "试听 920ms 撞车"}
+              </span>
             </button>
           </div>
           <canvas
             ref={canvasWsRef}
             width={460}
             height={78}
-            className="w-full h-[78px] rounded-lg bg-black/50 border border-white/5"
+            className="w-full h-[78px] rounded-lg bg-black/50 border border-white/5 block"
           />
           <p className="text-[11px] font-mono text-[#8b909a] leading-relaxed">
             {isEn
-              ? 'Caller @ 1.4s: "Hold on—switch me to billing!" while AI keeps talking over the caller until 2.32s.'
-              : '1.4s 来电者插话 "Hold on—switch me to billing!"，AI 缓冲区无法撤回，持续叠音撞车至 2.32s。'}
+              ? 'AI: "Thank you for calling automated insurance claims..." → Caller @ 1.4s: "Stop! Skip the script—is tow unit 4819 dispatched?!" while AI keeps talking over the caller until 2.32s.'
+              : 'AI 播报 "Thank you for calling automated insurance claims..." → 1.4s 来电者抢话 "Stop! Skip the script—is tow unit 4819 dispatched?!"，AI 缓冲区无法撤回，持续叠音撞车至 2.32s。'}
           </p>
         </div>
 
         {/* Track B: 8kHz Raw RTP */}
         <div className="rounded-xl border border-emerald-500/35 bg-[#0c1512] p-4 space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <div>
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5">
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
-                <Zap className="w-3.5 h-3.5" />
-                <span>{isEn ? "HardCall 8kHz Raw RTP Gateway" : "HardCall 8kHz 裸流 RTP 网关"}</span>
+                <Zap className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">
+                  {isEn ? "HardCall 8kHz Raw RTP Gateway" : "HardCall 8kHz 裸流 RTP 网关"}
+                </span>
               </div>
               <div className="text-[11px] font-mono text-[#a1a1a6]">
-                {isEn ? "52ms ring-buffer flush + instant turn reply" : "52ms 瞬间净断 + 自然毫秒级接话"}
+                {isEn ? "51.96ms (~52ms) flush + instant turn reply" : "51.96ms（~52ms）净断 + 毫秒级接话"}
               </div>
             </div>
             <button
               type="button"
               onClick={() => playComparison("rtp")}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-mono font-bold cursor-pointer transition"
+              className="min-h-10 shrink-0 whitespace-nowrap inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-mono font-bold cursor-pointer transition"
             >
-              {playingMode === "rtp" ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-              <span>{playingMode === "rtp" ? (isEn ? "Stop" : "停止") : (isEn ? "Hear 52ms Cutoff" : "试听 52ms 净断")}</span>
+              {playingMode === "rtp" ? <Square className="w-3.5 h-3.5 shrink-0" /> : <Play className="w-3.5 h-3.5 shrink-0" />}
+              <span>
+                {playingMode === "rtp"
+                  ? isEn
+                    ? "Stop"
+                    : "停止"
+                  : isEn
+                  ? "Hear 52ms Cutoff"
+                  : "试听 52ms 净断"}
+              </span>
             </button>
           </div>
           <canvas
             ref={canvasRtpRef}
             width={460}
             height={78}
-            className="w-full h-[78px] rounded-lg bg-black/50 border border-white/5"
+            className="w-full h-[78px] rounded-lg bg-black/50 border border-white/5 block"
           />
           <p className="text-[11px] font-mono text-[#8b909a] leading-relaxed">
             {isEn
-              ? 'AI cuts cleanly at 1.452s (52ms) → replies naturally: "Got it — routing you to billing right now."'
-              : '1.452s（52ms）硬件级环形缓冲清零净断，听完即刻回复 "Got it — routing you to billing right now."'}
+              ? 'Caller @ 1.4s: "Stop! Skip the script—is tow unit 4819 dispatched?!" → AI cuts cleanly at 1.452s (51.96ms) & replies: "Unit 4819 is 11 minutes away on I-95."'
+              : '1.4s 插话 "Stop! Skip the script—is tow unit 4819 dispatched?!" → AI 于 1.452s（51.96ms）环形缓冲清零净断并即刻回复："Unit 4819 is 11 minutes away on I-95."'}
           </p>
         </div>
       </div>

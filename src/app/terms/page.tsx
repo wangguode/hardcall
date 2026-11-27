@@ -9,115 +9,167 @@ export default function TermsOfUsePage() {
             href="/"
             className="text-xs font-mono text-emerald-400 hover:underline"
           >
-            ← Back to HardCall
+            ← Back to HardCall RTP Infrastructure
           </Link>
           <h1 className="text-3xl font-bold tracking-tight text-white">
-            Terms of Use &amp; Acceptable Use Policy
+            Commercial Terms of Service &amp; Acceptable Use Policy
           </h1>
           <p className="text-sm text-[#a1a1a6]">
-            Effective Date: November 20, 2026 · Operator: Wang Guo (HardCall) ·
+            Effective Date: November 27, 2026 · Provider: Wang Guo (HardCall Voice Architecture) ·
             Website: https://hardcall.statementflow.win
           </p>
         </div>
 
         <section className="space-y-3 text-sm text-[#d1d1d6]">
           <h2 className="text-lg font-semibold text-white">
-            1. Scope of Service
+            1. Scope of B2B Telephony Infrastructure &amp; Services
           </h2>
           <p>
-            HardCall provides interactive AI voice interview drills, follow-up
-            question generation, and post-call script rewrite coaching for
-            career preparation, technical interviews, and executive
-            communication training. By accessing or purchasing HardCall, you
-            agree to these Terms of Use.
+            HardCall provides enterprise PSTN/SIP/WebRTC full-duplex voice
+            interruption diagnostics, self-hosted 8kHz raw UDP/RTP media gateway
+            software, FreeSWITCH packetization configurations, and turnkey
+            telephony engineering engagements. We also provide a free browser-based
+            WebAudio acoustic barge-in benchmark laboratory for technical
+            evaluation. By accessing HardCall or purchasing any commercial tier,
+            your organization agrees to these Terms.
           </p>
         </section>
 
         <section className="space-y-3 text-sm text-[#d1d1d6]">
           <h2 className="text-lg font-semibold text-white">
-            2. Purchases, Billing &amp; Refunds
+            2. Commercial Engagement Tiers, SLAs &amp; Credit Policy
           </h2>
           <p>
-            Online web purchases are processed by Creem.io as our authorized
-            Merchant of Record. Commercial B2B engagements include the Voice
-            Latency Audit Pilot ($299 one-time), Self-Hosted 8kHz RTP
-            Deployment Kit ($1,200 license), and Custom Enterprise Integrations
-            ($3,000+), granting agreed software deliverables and engineering
-            support. The web browser simulator is provided free of charge. If
-            you experience technical issues or wish to request a refund within 7
-            days of purchase, please email{" "}
-            <a
-              href="mailto:hello@statementflow.win"
-              className="text-emerald-400 underline"
-            >
-              hello@statementflow.win
-            </a>{" "}
-            with your order reference.
+            Online payments and corporate tax/VAT invoices are processed by{" "}
+            <strong>Creem.io</strong> as our authorized Merchant of Record, or
+            via direct B2B purchase order where agreed in writing:
           </p>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>
+              <strong>Tier 1 — 48h SIP/WebRTC Voice Latency Audit ($299 one-time):</strong>{" "}
+              Includes live dial/endpoint profiling of your designated test SIP
+              URI, PSTN number, or WebRTC voice agent, a frame-by-frame
+              RTP/jitter/resampler/VAD/TTS flamegraph, and a concrete patch
+              blueprint delivered within 48 business hours of kickoff submission.{" "}
+              <span className="text-emerald-300 font-medium">
+                SLA &amp; Refund Guarantee:
+              </span>{" "}
+              If our audit does not identify actionable architectural changes
+              yielding a <strong>&ge;40% reduction in end-to-end barge-in cutoff latency</strong>{" "}
+              (when baseline cutoff exceeds 150ms), you are entitled to a{" "}
+              <strong>100% full refund</strong> upon request within 14 days of
+              report delivery. Furthermore, <strong>100% of your $299 Audit fee is creditable</strong>{" "}
+              toward the $1,200 Self-Hosted Deployment Kit or a $3,000+ Custom
+              Enterprise SOW within 30 calendar days of your audit purchase.
+            </li>
+            <li>
+              <strong>Tier 2 — 8kHz Raw RTP Self-Hosted Deployment Kit ($1,200 one-time):</strong>{" "}
+              Grants your organization a perpetual, non-exclusive,
+              single-organization commercial license to deploy HardCall&apos;s
+              FreeSWITCH <code>ptime=20ms</code> dialplan/profile stack,
+              256-frame lock-free Go/Node UDP/RTP ring-buffer bridge,{" "}
+              <code>libsoxr</code> VHQ <code>8kHz&rarr;16kHz</code> resampling
+              pipeline, Docker Compose manifests, private GitHub repository
+              updates, and one 2-hour live architect onboarding session across
+              unlimited internal VPC nodes. Redistribution, public mirroring, or
+              resale of the kit source code as a standalone competing SDK is
+              prohibited.
+            </li>
+            <li>
+              <strong>Tier 3 — Turnkey Enterprise SIP Cluster &amp; Custom SOW ($3,000+):</strong>{" "}
+              Governed by a mutually executed Statement of Work (SOW) covering
+              direct AWS/GCP/on-prem VPC deployment, 200+ concurrent SIP trunk
+              load verification, custom two-tier acoustic/semantic VAD tuning,
+              and 30-day dedicated engineering channel support.
+            </li>
+          </ul>
         </section>
 
         <section
           id="acceptable-use"
-          className="space-y-3 text-sm text-[#d1d1d6] rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6"
+          className="space-y-3 text-sm text-[#d1d1d6] rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6"
         >
           <h2 className="text-lg font-semibold text-white">
-            3. Acceptable Use Policy (Prohibited &amp; NSFW AI Content)
+            3. Acceptable Use &amp; Telecommunications Compliance Policy
           </h2>
           <p>
-            HardCall uses AI models strictly for professional interview
-            practice, communication coaching, and script refinement. You agree{" "}
-            <strong>NOT</strong> to use HardCall&apos;s AI follow-up question
-            generation, voice interaction, or post-call rewrite features to
-            generate, solicit, or distribute any prohibited content, including:
+            HardCall software and diagnostic services are engineered strictly for
+            lawful enterprise voice infrastructure. By submitting any SIP URI,
+            PSTN telephone number, or WebRTC endpoint, or deploying the HardCall
+            RTP Kit, you represent and warrant that:
           </p>
           <ul className="list-disc pl-5 space-y-1.5">
             <li>
-              <strong>NSFW, sexually explicit, or adult content</strong>,
-              including erotic roleplay or non-consensual sexual material.
+              <strong>Authorized Endpoints Only:</strong> You own or hold
+              explicit written authorization to dial, load-test, and capture
+              diagnostic latency traces on every telephone number, SIP trunk, or
+              WebRTC endpoint submitted to HardCall.
             </li>
             <li>
-              <strong>Harassment, hate speech, violence, or self-harm</strong>{" "}
-              promotion, threats, or abusive targeting of individuals or groups.
+              <strong>Telecom &amp; Robocall Compliance:</strong> You will not
+              use HardCall software to originate unlawful automated calls, spam,
+              caller-ID spoofing, phishing/vishing, or traffic violating the U.S.
+              TCPA, FCC STIR/SHAKEN rules, EU ePrivacy Directive, or applicable
+              carrier terms.
             </li>
             <li>
-              <strong>Illegal, fraudulent, or deceptive activity</strong>,
-              including impersonation, non-consensual voice cloning, phishing,
-              or bypassing security controls.
+              <strong>No Emergency Service Disruption:</strong> You will never
+              point HardCall test probes or unvalidated automated voice trunks at
+              emergency PSAP numbers (e.g., 911, 112, 999) or critical life-safety
+              lines.
             </li>
             <li>
-              <strong>Automated abuse or scraping</strong> that attempts to
-              reverse-engineer, overload, or extract underlying prompts or
-              infrastructure.
+              <strong>Infrastructure Integrity:</strong> You will not conduct
+              SIP flood attacks, credential stuffing, unauthorized call
+              interception, or abuse HardCall APIs beyond documented rate limits.
             </li>
           </ul>
           <p>
-            Violations of this Acceptable Use Policy may result in immediate
-            access termination without refund and reporting where required by
-            applicable law.
+            Material violations of this Acceptable Use Policy may result in
+            immediate suspension of diagnostic probes or repository access and
+            reporting to relevant telecommunications authorities where required
+            by law.
           </p>
         </section>
 
         <section className="space-y-3 text-sm text-[#d1d1d6]">
           <h2 className="text-lg font-semibold text-white">
-            4. Disclaimer &amp; Limitation of Liability
+            4. Intellectual Property &amp; Open-Source Components
           </h2>
           <p>
-            AI coaching feedback and generated follow-up questions are provided
-            &ldquo;as is&rdquo; for educational practice only and do not
-            guarantee specific hiring, compensation, or business outcomes. To
-            the maximum extent permitted by law, HardCall&apos;s aggregate
-            liability shall not exceed the amount you paid for the service in
-            the preceding 12 months.
+            Public reference materials in our open GitHub laboratory remain
+            licensed under the MIT License. Commercial kit deliverables, custom
+            FreeSWITCH/RTP patches, and audit reports remain the intellectual
+            property of HardCall, licensed to the purchasing organization for
+            internal production and commercial voice product operation under
+            Section 2. Customer retains 100% ownership of its own application
+            code, prompts, SIP credentials, and VPC infrastructure.
           </p>
         </section>
 
         <section className="space-y-3 text-sm text-[#d1d1d6]">
           <h2 className="text-lg font-semibold text-white">
-            5. Support Contact
+            5. Warranties &amp; Limitation of Liability
           </h2>
           <p>
-            Questions regarding these Terms or Acceptable Use Policy may be sent
-            to{" "}
+            Except for the express 48h Latency Audit SLA refund guarantee stated
+            in Section 2, software and reference configurations are provided
+            &ldquo;as is&rdquo; without implied warranties of uninterrupted
+            carrier routing (which depends on upstream PSTN/SIP carriers and LLM
+            / ASR third-party providers). To the maximum extent permitted by
+            applicable law, HardCall&apos;s aggregate liability under these Terms
+            shall not exceed the total fees paid by your organization to HardCall
+            in the twelve (12) months preceding the claim.
+          </p>
+        </section>
+
+        <section className="space-y-3 text-sm text-[#d1d1d6]">
+          <h2 className="text-lg font-semibold text-white">
+            6. Commercial Support &amp; Notices
+          </h2>
+          <p>
+            For SLA refund claims, $299-to-$1,200 upgrade credit redemption,
+            corporate invoicing, or procurement inquiries, contact{" "}
             <a
               href="mailto:hello@statementflow.win"
               className="text-emerald-400 underline"
