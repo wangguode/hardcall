@@ -2,45 +2,46 @@
 3:"/_next/static/chunks/3qfy96eoyh-ek.js"
 4:I[39756,["$3"],"default"]
 5:I[37457,["$3"],"default"]
-e:"ViewportBoundary"
-f:I[97367,["$3"],"$e"]
-10:"MetadataBoundary"
-11:I[97367,["$3"],"$10"]
-12:"$Sreact.suspense"
-:HL["/_next/static/chunks/0ofor3h0xqbqu.css","style"]
+f:"ViewportBoundary"
+10:I[97367,["$3"],"$f"]
+11:"MetadataBoundary"
+12:I[97367,["$3"],"$11"]
+13:"$Sreact.suspense"
+:HL["/_next/static/chunks/2mwkokoetq_n9.css","style"]
 :HL["https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap","style"]
 2:T49f,[{"@context":"https://schema.org","@type":"SoftwareApplication","name":"HardCall 8kHz RTP Voice Barge-In Gateway","url":"https://hardcall.statementflow.win","applicationCategory":"DeveloperApplication","operatingSystem":"Linux, Docker, Web","description":"Sub-60ms PSTN/SIP full-duplex voice interruption architecture using FreeSWITCH, 8kHz raw RTP, SOXR VHQ lossless resampling, and 0.16ms ring-buffer teardown.","offers":[{"@type":"Offer","name":"Browser Barge-In Simulator","price":"0.00","priceCurrency":"USD"},{"@type":"Offer","name":"48h Voice Latency Audit Pilot","price":"299.00","priceCurrency":"USD"},{"@type":"Offer","name":"8kHz RTP Self-Hosted Deployment Kit","price":"1200.00","priceCurrency":"USD"}]},{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Why do standard WebSocket voice agents suffer from 900ms+ barge-in lag?","acceptedAnswer":{"@type":"Answer","text":"TCP head-of-line blocking, buffered TTS chunks, and linear 8kHz-to-16kHz resampling cause 850ms to 1,400ms trailing audio overlap on PSTN phone lines. HardCall uses raw UDP/RTP + 256-frame ring buffer flush (0.16ms) to achieve 52ms–60ms interruption."}}]}]7:X
 a:X
 a:C
-b:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$1","c",{"children":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":"$0:t:t:d:r:props:children:1:props:children:1:props:children:props:notFound:0:1:props:style","children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":"$0:t:t:d:r:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:1:props:style","children":404}],["$","div",null,{"style":"$0:t:t:d:r:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:style","children":["$","h2",null,{"style":"$0:t:t:d:r:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:children:props:style","children":"This page could not be found."}]}]]}]}]],null,"$Lc"]}],"p":"$@d","v":null,"s":"$7"}}]]
+b:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$1","c",{"children":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":"$0:t:t:d:r:props:children:1:props:children:1:props:children:props:notFound:0:1:props:style","children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":"$0:t:t:d:r:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:1:props:style","children":404}],"$Lc"]}]}]],null,"$Ld"]}],"p":"$@e","v":null,"s":"$7"}}]]
 8:[["children",{"s":"/_not-found","h":96,"d":{"r":["$","$1","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@9","v":"$a","s":"$7"},"c":"$Qb"}]]
-0:{"t":{"t":{"s":"","h":80,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/0ofor3h0xqbqu.css","precedence":"next"}],["$","script","script-0",{"src":"/_next/static/chunks/3qfy96eoyh-ek.js","async":true}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}],["$","link",null,{"href":"https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap","rel":"stylesheet"}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"$2"}}]]}],["$","body",null,{"className":"antialiased bg-obsidian text-[#f5f5f7]","children":["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}],"notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]]}]}]]}]]}],"p":"$@6","v":null,"s":"$7"},"c":"$Q8"},"h":{"r":["$","$1","h",{"children":[["$","meta",null,{"name":"robots","content":"noindex"}],["$","$Lf",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L11",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$12",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"HardCall — 60ms 8kHz RTP Voice Barge-In Gateway & Open-Source Simulator"}],["$","meta","1",{"name":"description","content":"Sub-60ms PSTN/SIP telephony barge-in architecture (FreeSWITCH + 8kHz raw RTP + SOXR VHQ + 0.16ms ring-buffer flush). Test full-duplex voice interruption free in your browser or book a $299 48h latency audit."}],"$L13","$L14","$L15","$L16","$L17","$L18","$L19","$L1a","$L1b","$L1c","$L1d","$L1e","$L1f","$L20","$L21","$L22","$L23"]}]}],null]}],null]}],"p":"$@24","v":null,"s":"$7"}},"a":"$@25","u":"$@26","b":"PircJDQkmaHTAhSXVM6ph"}
-27:I[97367,["$3"],"OutletBoundary"]
-29:I[27201,["$3"],"IconMark"]
-c:["$","$L27",null,{"children":["$","$12",null,{"name":"Next.MetadataOutlet","children":"$@28"}]}]
-13:["$","meta","2",{"name":"robots","content":"index, follow"}]
-14:["$","link","3",{"rel":"canonical","href":"https://hardcall.statementflow.win"}]
-15:["$","meta","4",{"property":"og:title","content":"HardCall — 60ms 8kHz RTP Voice Gateway & Free Barge-In Simulator"}]
-16:["$","meta","5",{"property":"og:description","content":"Eliminate 900ms+ WebSocket voice agent barge-in lag. Open-source browser simulator + enterprise 8kHz RTP / FreeSWITCH deployment kit."}]
-17:["$","meta","6",{"property":"og:url","content":"https://hardcall.statementflow.win"}]
-18:["$","meta","7",{"property":"og:site_name","content":"HardCall"}]
-19:["$","meta","8",{"property":"og:image","content":"https://hardcall.statementflow.win/og-hardcall.png"}]
-1a:["$","meta","9",{"property":"og:image:width","content":"1200"}]
-1b:["$","meta","10",{"property":"og:image:height","content":"675"}]
-1c:["$","meta","11",{"property":"og:image:alt","content":"HardCall — 52ms Full-Duplex Voice Barge-In Architecture"}]
-1d:["$","meta","12",{"property":"og:type","content":"website"}]
-1e:["$","meta","13",{"name":"twitter:card","content":"summary_large_image"}]
-1f:["$","meta","14",{"name":"twitter:title","content":"HardCall — 60ms 8kHz RTP Voice Gateway & Barge-In Simulator"}]
-20:["$","meta","15",{"name":"twitter:description","content":"Sub-60ms PSTN/SIP barge-in architecture vs 900ms+ WebSocket lag. Free simulator + $299 48h latency audit."}]
-21:["$","meta","16",{"name":"twitter:image","content":"https://hardcall.statementflow.win/og-hardcall.png"}]
-22:["$","link","17",{"rel":"icon","href":"/icon.svg?icon.2_e1ntdxgbrj6.svg","sizes":"any","type":"image/svg+xml"}]
-23:["$","$L29","18",{}]
+0:{"t":{"t":{"s":"","h":80,"d":{"r":["$","$1","c",{"children":[[["$","link","0",{"rel":"stylesheet","href":"/_next/static/chunks/2mwkokoetq_n9.css","precedence":"next"}],["$","script","script-0",{"src":"/_next/static/chunks/3qfy96eoyh-ek.js","async":true}]],["$","html",null,{"lang":"en","children":[["$","head",null,{"children":[["$","link",null,{"rel":"preconnect","href":"https://fonts.googleapis.com"}],["$","link",null,{"rel":"preconnect","href":"https://fonts.gstatic.com","crossOrigin":"anonymous"}],["$","link",null,{"href":"https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap","rel":"stylesheet"}],["$","script",null,{"type":"application/ld+json","dangerouslySetInnerHTML":{"__html":"$2"}}],["$","script",null,{"src":"https://pulse.statementflow.win/api/pixel.js","defer":true}]]}],["$","body",null,{"className":"antialiased bg-obsidian text-[#f5f5f7]","children":["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}],"notFound":[[["$","title",null,{"children":"404: This page could not be found."}],["$","div",null,{"style":{"fontFamily":"system-ui,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif,\"Apple Color Emoji\",\"Segoe UI Emoji\"","height":"100vh","textAlign":"center","display":"flex","flexDirection":"column","alignItems":"center","justifyContent":"center"},"children":["$","div",null,{"children":[["$","style",null,{"dangerouslySetInnerHTML":{"__html":"body{color:#000;background:#fff;margin:0}.next-error-h1{border-right:1px solid rgba(0,0,0,.3)}@media (prefers-color-scheme:dark){body{color:#fff;background:#000}.next-error-h1{border-right:1px solid rgba(255,255,255,.3)}}"}}],["$","h1",null,{"className":"next-error-h1","style":{"display":"inline-block","margin":"0 20px 0 0","padding":"0 23px 0 0","fontSize":24,"fontWeight":500,"verticalAlign":"top","lineHeight":"49px"},"children":404}],["$","div",null,{"style":{"display":"inline-block"},"children":["$","h2",null,{"style":{"fontSize":14,"fontWeight":400,"lineHeight":"49px","margin":0},"children":"This page could not be found."}]}]]}]}]],[]]}]}]]}]]}],"p":"$@6","v":null,"s":"$7"},"c":"$Q8"},"h":{"r":["$","$1","h",{"children":[["$","meta",null,{"name":"robots","content":"noindex"}],["$","$L10",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L12",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$13",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"HardCall — 60ms 8kHz RTP Voice Barge-In Gateway & Open-Source Simulator"}],["$","meta","1",{"name":"description","content":"Sub-60ms PSTN/SIP telephony barge-in architecture (FreeSWITCH + 8kHz raw RTP + SOXR VHQ + 0.16ms ring-buffer flush). Test full-duplex voice interruption free in your browser or book a $299 48h latency audit."}],"$L14","$L15","$L16","$L17","$L18","$L19","$L1a","$L1b","$L1c","$L1d","$L1e","$L1f","$L20","$L21","$L22","$L23","$L24"]}]}],null]}],null]}],"p":"$@25","v":null,"s":"$7"}},"a":"$@26","u":"$@27","b":"rdeHiWoeUOXLNXEPiA13L"}
+28:I[97367,["$3"],"OutletBoundary"]
+2a:I[27201,["$3"],"IconMark"]
+c:["$","div",null,{"style":"$0:t:t:d:r:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:style","children":["$","h2",null,{"style":"$0:t:t:d:r:props:children:1:props:children:1:props:children:props:notFound:0:1:props:children:props:children:2:props:children:props:style","children":"This page could not be found."}]}]
+d:["$","$L28",null,{"children":["$","$13",null,{"name":"Next.MetadataOutlet","children":"$@29"}]}]
+14:["$","meta","2",{"name":"robots","content":"index, follow"}]
+15:["$","link","3",{"rel":"canonical","href":"https://hardcall.statementflow.win"}]
+16:["$","meta","4",{"property":"og:title","content":"HardCall — 60ms 8kHz RTP Voice Gateway & Free Barge-In Simulator"}]
+17:["$","meta","5",{"property":"og:description","content":"Eliminate 900ms+ WebSocket voice agent barge-in lag. Open-source browser simulator + enterprise 8kHz RTP / FreeSWITCH deployment kit."}]
+18:["$","meta","6",{"property":"og:url","content":"https://hardcall.statementflow.win"}]
+19:["$","meta","7",{"property":"og:site_name","content":"HardCall"}]
+1a:["$","meta","8",{"property":"og:image","content":"https://hardcall.statementflow.win/og-hardcall.png"}]
+1b:["$","meta","9",{"property":"og:image:width","content":"1200"}]
+1c:["$","meta","10",{"property":"og:image:height","content":"675"}]
+1d:["$","meta","11",{"property":"og:image:alt","content":"HardCall — 52ms Full-Duplex Voice Barge-In Architecture"}]
+1e:["$","meta","12",{"property":"og:type","content":"website"}]
+1f:["$","meta","13",{"name":"twitter:card","content":"summary_large_image"}]
+20:["$","meta","14",{"name":"twitter:title","content":"HardCall — 60ms 8kHz RTP Voice Gateway & Barge-In Simulator"}]
+21:["$","meta","15",{"name":"twitter:description","content":"Sub-60ms PSTN/SIP barge-in architecture vs 900ms+ WebSocket lag. Free simulator + $299 48h latency audit."}]
+22:["$","meta","16",{"name":"twitter:image","content":"https://hardcall.statementflow.win/og-hardcall.png"}]
+23:["$","link","17",{"rel":"icon","href":"/icon.svg?icon.2_e1ntdxgbrj6.svg","sizes":"any","type":"image/svg+xml"}]
+24:["$","$L2a","18",{}]
 7:300
-28:null
-26:true
+29:null
+27:true
 7:C
-25:0
+26:0
 9:"$undefined"
 6:"$undefined"
-24:"$undefined"
-d:"$undefined"
+25:"$undefined"
+e:"$undefined"

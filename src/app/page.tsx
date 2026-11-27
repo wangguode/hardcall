@@ -1516,22 +1516,22 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 评估期 CTO 零门槛转化桥梁：免费获取完整 51.9ms 压测样本报告与架构预检 */}
-          <div className="rounded-2xl border border-white/12 bg-[#11141c] p-6 sm:p-7">
+          {/* 评估期 CTO 零门槛转化桥梁：提交真实测试电话号码或 WebRTC 地址免费领 15s 抢话碰撞实测快照 */}
+          <div className="rounded-2xl border border-emerald-500/30 bg-[#0f151e] p-6 sm:p-7">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
               <div className="lg:col-span-7 space-y-1.5">
                 <div className="text-xs font-mono font-bold text-emerald-400 uppercase">
-                  {isEn ? "EVALUATING WITH YOUR TEAM FIRST?" : "需要先拉通技术合伙人内部评审？"}
+                  {isEn ? "FREE 15-SECOND LIVE SPOT CHECK ON YOUR AGENT" : "免费实测您线上语音 Agent 的真实打断延迟"}
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-white">
                   {isEn
-                    ? "Get the Sample 51.9ms SIP/RTP Audit Breakdown + Free Architecture Pre-Check"
-                    : "免费获取 51.9ms 逐帧压测样本报告 + 当前语音栈瓶颈预检"}
+                    ? "Paste your live demo phone number or WebRTC URL — see your exact barge-in lag before spending $299"
+                    : "填入您的公开测试电话号码或 WebRTC 链接 — 先看真实碰撞毫秒数再决定是否下单 $299"}
                 </h3>
                 <p className="text-xs text-[#a1a1a6] leading-relaxed">
                   {isEn
-                    ? "Share your work email and current voice stack (Twilio, LiveKit, Vapi, Pipecat, Retell, custom WebSocket). We'll email the full sample trace immediately so you can review with your team before booking the $299 audit."
-                    : "填入企业邮箱与当前技术栈（如 Twilio / LiveKit / Pipecat / 自研 WebSocket），系统立即发送完整样本火焰图拆解至您收件箱。"}
+                    ? "Enter your work email and your live PSTN test number (+1...) or current stack (Twilio, LiveKit, Vapi, Retell, Pipecat). We'll send back our 51.9ms reference trace immediately and spot-check your live line."
+                    : "填入企业邮箱与您的测试电话号码（或当前 Twilio / LiveKit / Vapi / 自研技术栈），立即获取 51.9ms 基准火焰图与实测快照。"}
                 </p>
               </div>
               <form onSubmit={handleLeadCaptureSubmit} className="lg:col-span-5 space-y-2.5">
@@ -1550,8 +1550,8 @@ export default function HomePage() {
                     required
                     value={leadStack}
                     onChange={(e) => setLeadStack(e.target.value)}
-                    placeholder="e.g. Twilio SIP + LiveKit + Deepgram"
-                    aria-label="Current voice stack"
+                    placeholder="Live test phone (+1...) or Twilio/LiveKit stack"
+                    aria-label="Live test phone number or voice stack"
                     className="flex-1 min-h-11 rounded-xl border border-white/15 bg-black/50 px-3.5 py-2 text-base sm:text-xs text-white placeholder:text-[#7c8291] focus:border-emerald-400 focus:outline-none"
                   />
                   <button
@@ -1559,7 +1559,7 @@ export default function HomePage() {
                     disabled={leadLoading}
                     className="min-h-11 shrink-0 rounded-xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2 text-xs font-bold text-black cursor-pointer disabled:opacity-60"
                   >
-                    {leadLoading ? "Sending..." : isEn ? "Email Sample Trace →" : "发送样本报告 →"}
+                    {leadLoading ? "Sending..." : isEn ? "Get Free Spot Check →" : "免费领实测快照 →"}
                   </button>
                 </div>
                 {leadMsg && <p className="text-xs font-medium text-emerald-400">{leadMsg}</p>}
