@@ -377,6 +377,19 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
         )
           .bind(country, JSON.stringify({ plan, hasEmail: Boolean(customerEmail) }).slice(0, 240))
           .run();
+        // 发起结账即持久化准买家邮箱，防止在 Creem 收银页中途关闭导致高意向 CTO 联系方式丢失
+        if (customerEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+          await env.DB.prepare(
+            `INSERT INTO hc_leads (work_email, voice_stack, notes, country) VALUES (?1, ?2, ?3, ?4)`
+          )
+            .bind(
+              customerEmail,
+              stackNote || "Not specified",
+              `[Checkout Initiated: ${plan}]`,
+              country
+            )
+            .run();
+        }
       } catch {
         // 漏斗统计失败不阻塞结账主流程
       }
@@ -1229,13 +1242,13 @@ const worker = {
                 .replace(/^(nov|dec|jan|feb|mar|apr|may|jun|jul|aug|sep|oct)\d{1,2}_(d\d+_)?/, "")
                 .replace(/[^a-z0-9]/g, "");
               const matched = await env.DB.prepare(
-                `SELECT slug FROM outreach_logs
+                `SELECT slug, recipient_email, page_views, buyer_clicks FROM outreach_logs
                  WHERE LOWER(slug) = ?1
                     OR (?2 != '' AND LENGTH(?2) >= 2 AND (LOWER(slug) LIKE '%' || ?2 || '%' OR LOWER(recipient_email) LIKE '%' || ?2 || '%'))
                  ORDER BY id DESC LIMIT 1`
               )
                 .bind(rawCampaign, token)
-                .first<{ slug: string }>();
+                .first<{ slug: string; recipient_email: string; page_views: number; buyer_clicks: number }>();
               if (matched?.slug) {
                 const isView = ev === "page_view" ? 1 : 0;
                 const isBuyerIntent =
@@ -1253,6 +1266,17 @@ const worker = {
                 )
                   .bind(isView, isBuyerIntent, `hc:${ev}`.slice(0, 48), matched.slug)
                   .run();
+                if (
+                  matched.recipient_email &&
+                  ((matched.buyer_clicks === 0 && isBuyerIntent === 1) ||
+                    (matched.page_views === 1 && isView === 1))
+                ) {
+                  await sendHcEmail(env, {
+                    to: "hello@statementflow.win",
+                    subject: `🔥 [HardCall Hot Lead Online] ${matched.recipient_email} triggered ${ev}!`,
+                    text: `Voice AI outreach target is actively testing HardCall right now:\n- Prospect: ${matched.recipient_email} (${matched.slug})\n- Action: ${ev}\n- Country: ${country}\n\nSend a 3-line personal follow-up within 15 minutes while they have the tab open!`,
+                  });
+                }
               }
             } catch {
               // 归因回写异常不影响事件采集主链路
