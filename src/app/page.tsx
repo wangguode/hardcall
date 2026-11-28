@@ -328,16 +328,56 @@ export default function HomePage() {
     };
   }, [isEn]);
 
+  const trackHcEvent = (
+    event: string,
+    extra?: Record<string, string | number | boolean>
+  ) => {
+    if (typeof window === "undefined") return;
+    try {
+      const STORAGE_KEY = "hc_utm_attribution_v1";
+      const params = new URLSearchParams(window.location.search);
+      const src = params.get("utm_source")?.trim().slice(0, 64) || "";
+      const camp = params.get("utm_campaign")?.trim().slice(0, 80) || "";
+      const med = params.get("utm_medium")?.trim().slice(0, 64) || "";
+      let utm: { utm_source?: string; utm_campaign?: string; utm_medium?: string } = {};
+      if (src || camp || med) {
+        utm = {
+          ...(src ? { utm_source: src } : {}),
+          ...(camp ? { utm_campaign: camp } : {}),
+          ...(med ? { utm_medium: med } : {}),
+        };
+        window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(utm));
+      } else {
+        const cached = window.sessionStorage.getItem(STORAGE_KEY);
+        if (cached) utm = JSON.parse(cached);
+      }
+      const payload = JSON.stringify({
+        event,
+        meta: {
+          path: `${window.location.pathname}${window.location.hash || ""}`.slice(0, 90),
+          ...utm,
+          ...(extra || {}),
+        },
+      });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon("/api/event", new Blob([payload], { type: "application/json" }));
+      } else {
+        fetch("/api/event", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {
+      // 埋点异常不阻塞主交互
+    }
+  };
+
   useEffect(() => {
-    fetch("/api/event", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        event: "page_view",
-        meta: { ref: (document.referrer || "direct").slice(0, 100) },
-      }),
-      keepalive: true,
-    }).catch(() => {});
+    trackHcEvent("page_view", {
+      ref: (document.referrer || "direct").slice(0, 100),
+    });
   }, []);
 
   const handleLeadCaptureSubmit = async (e: React.FormEvent) => {
@@ -381,6 +421,10 @@ export default function HomePage() {
     if (!b2bModalPlan) return;
     setB2bLoading(true);
     setB2bError("");
+    trackHcEvent("checkout_click", {
+      plan: b2bModalPlan,
+      hasEmail: Boolean(b2bEmail.trim()),
+    });
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -601,6 +645,11 @@ export default function HomePage() {
       setOutboundPlaying(false);
       const measured = Math.round(performance.now() - onsetAt);
       setLastMeasuredCutoffMs(measured);
+      trackHcEvent("barge_in_test", {
+        mode: activeMode,
+        src: sourceLabel.slice(0, 32),
+        cutoffMs: measured,
+      });
 
       if (activeMode === "ws920") {
         setOverlapEventsCount((c) => c + 1);
@@ -692,12 +741,7 @@ export default function HomePage() {
 
   const handleStartCall = () => {
     stopAllLiveAudio();
-    fetch("/api/event", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event: "sim_start", meta: { scenario: selectedQuestion.id } }),
-      keepalive: true,
-    }).catch(() => {});
+    trackHcEvent("sim_start", { scenario: selectedQuestion.id, mode: simGatewayMode });
     setCallStatus("ringing");
     setTranscript([]);
     setElapsed(0);
@@ -852,12 +896,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => {
-                fetch("/api/event", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ event: "b2b_modal_open", meta: { src: "topbar" } }),
-                  keepalive: true,
-                }).catch(() => {});
+                trackHcEvent("b2b_modal_open", { src: "topbar" });
                 setB2bModalPlan("audit");
               }}
               className="whitespace-nowrap min-h-9 text-xs px-3 sm:px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-semibold transition-colors cursor-pointer"

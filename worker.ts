@@ -1218,6 +1218,46 @@ const worker = {
           )
             .bind(ev, country, JSON.stringify(body.meta || {}).slice(0, 260))
             .run();
+          // 若携带外联 utm_campaign，实时同步更新共享 D1 outreach_logs 打开与高意向交互指标
+          const rawCampaign = String(body.meta?.utm_campaign || "")
+            .trim()
+            .toLowerCase()
+            .slice(0, 80);
+          if (rawCampaign) {
+            try {
+              const token = rawCampaign
+                .replace(/^(nov|dec|jan|feb|mar|apr|may|jun|jul|aug|sep|oct)\d{1,2}_(d\d+_)?/, "")
+                .replace(/[^a-z0-9]/g, "");
+              const matched = await env.DB.prepare(
+                `SELECT slug FROM outreach_logs
+                 WHERE LOWER(slug) = ?1
+                    OR (?2 != '' AND LENGTH(?2) >= 2 AND (LOWER(slug) LIKE '%' || ?2 || '%' OR LOWER(recipient_email) LIKE '%' || ?2 || '%'))
+                 ORDER BY id DESC LIMIT 1`
+              )
+                .bind(rawCampaign, token)
+                .first<{ slug: string }>();
+              if (matched?.slug) {
+                const isView = ev === "page_view" ? 1 : 0;
+                const isBuyerIntent =
+                  ev !== "page_view" &&
+                  /^(sim_start|barge_in_test|b2b_modal_open|checkout_click|checkout_session_init|b2b_lead_capture)/.test(ev)
+                    ? 1
+                    : 0;
+                await env.DB.prepare(
+                  `UPDATE outreach_logs
+                   SET page_views = page_views + ?1,
+                       buyer_clicks = buyer_clicks + ?2,
+                       last_event_at = datetime('now'),
+                       last_event_type = ?3
+                   WHERE slug = ?4`
+                )
+                  .bind(isView, isBuyerIntent, `hc:${ev}`.slice(0, 48), matched.slug)
+                  .run();
+              }
+            } catch {
+              // 归因回写异常不影响事件采集主链路
+            }
+          }
         }
         return jsonResponse({ ok: true });
       } catch {
