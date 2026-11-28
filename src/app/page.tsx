@@ -956,22 +956,39 @@ export default function HomePage() {
           </p>
 
           <div className="pt-3 flex flex-wrap items-center justify-center gap-3.5">
-            <button
-              type="button"
-              onClick={() => setB2bModalPlan("audit")}
+            <a
+              href="#simulator"
+              onClick={() => trackHcEvent("hero_sim_jump")}
               className="min-h-12 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm flex items-center gap-2 transition-transform active:scale-95 cursor-pointer shadow-lg shadow-emerald-500/15"
             >
-              <Server className="w-4 h-4" />
-              <span>{isEn ? "Book 48h Latency Audit · $299" : "预约 48h 语音延迟体检 · $299"}</span>
-            </button>
+              <Activity className="w-4 h-4" />
+              <span>
+                {isEn
+                  ? "Test 52ms vs 920ms Live Simulator →"
+                  : "立即实测 52ms vs 920ms 交互沙盒 →"}
+              </span>
+            </a>
 
             <a
               href="#enterprise-b2b"
-              className="min-h-12 px-6 py-3 rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-white font-medium text-sm flex items-center gap-2 transition-colors backdrop-blur-md"
+              onClick={() => trackHcEvent("hero_waveform_jump")}
+              className="min-h-12 px-5 py-3 rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.08] text-white font-medium text-sm flex items-center gap-2 transition-colors backdrop-blur-md"
             >
-              <Activity className="w-4 h-4 text-emerald-400" />
-              <span>{isEn ? "Hear 52ms vs 920ms Proof" : "试听 52ms vs 920ms 声波对比"}</span>
+              <Zap className="w-4 h-4 text-emerald-400" />
+              <span>{isEn ? "Hear A/B Waveform" : "试听 A/B 声波对比"}</span>
             </a>
+
+            <button
+              type="button"
+              onClick={() => {
+                trackHcEvent("b2b_modal_open", { src: "hero" });
+                setB2bModalPlan("audit");
+              }}
+              className="min-h-12 px-5 py-3 rounded-xl border border-emerald-500/35 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-semibold text-sm flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <Server className="w-4 h-4" />
+              <span>{isEn ? "Book 48h SIP Audit · $299" : "预约 48h 压测 · $299"}</span>
+            </button>
           </div>
 
           <div className="pt-2 flex flex-wrap items-center justify-center gap-6 text-xs text-[#86868b] font-mono tabular-nums">
