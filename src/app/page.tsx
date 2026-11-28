@@ -1543,6 +1543,66 @@ export default function HomePage() {
                       </button>
                     </div>
                   </div>
+
+                  {transcript.length > 1 && (
+                    <div className="mt-3 rounded-2xl border-2 border-emerald-500/45 bg-emerald-950 text-white p-4 sm:p-5 space-y-3 shadow-lg">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-xs sm:text-sm font-bold text-emerald-300">
+                          {isEn
+                            ? `✓ Measured ${lastMeasuredCutoffMs}ms cutoff! Want sub-60ms RTP barge-in on your live phone agent?`
+                            : `✓ 实测 ${lastMeasuredCutoffMs}ms 极速截断！想在贵司真实电话线路落地亚 60ms 打断？`}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            trackHcEvent("b2b_modal_open", { src: "sim_active_banner" });
+                            setB2bModalPlan("audit");
+                          }}
+                          className="min-h-9 px-3.5 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-black font-bold text-xs cursor-pointer shrink-0"
+                        >
+                          {isEn ? "Book 48h SIP Audit ($299) →" : "预约 48h 压测 ($299) →"}
+                        </button>
+                      </div>
+                      <form
+                        onSubmit={(ev) => {
+                          trackHcEvent("sim_lead_submit", { cutoffMs: lastMeasuredCutoffMs });
+                          void handleLeadCaptureSubmit(ev);
+                        }}
+                        className="grid grid-cols-1 sm:grid-cols-12 gap-2"
+                      >
+                        <input
+                          type="email"
+                          required
+                          value={leadEmail}
+                          onChange={(ev) => setLeadEmail(ev.target.value)}
+                          placeholder={isEn ? "Work email (for free 15m trace review)" : "企业邮箱（免费领 15 分钟延迟诊断）"}
+                          className="sm:col-span-5 min-h-10 rounded-xl border border-white/20 bg-black/50 px-3 py-2 text-xs text-white placeholder:text-white/50 focus:border-emerald-400 focus:outline-none"
+                        />
+                        <input
+                          type="text"
+                          required
+                          value={leadStack}
+                          onChange={(ev) => setLeadStack(ev.target.value)}
+                          placeholder={isEn ? "Your stack (e.g. Twilio + LiveKit / Vapi)" : "当前语音栈（如 Twilio / FreeSWITCH）"}
+                          className="sm:col-span-4 min-h-10 rounded-xl border border-white/20 bg-black/50 px-3 py-2 text-xs text-white placeholder:text-white/50 focus:border-emerald-400 focus:outline-none"
+                        />
+                        <button
+                          type="submit"
+                          disabled={leadLoading}
+                          className="sm:col-span-3 min-h-10 rounded-xl bg-white hover:bg-emerald-100 text-black font-bold text-xs px-3 py-2 cursor-pointer disabled:opacity-60"
+                        >
+                          {leadLoading
+                            ? isEn ? "Sending..." : "提交中..."
+                            : isEn ? "Get Free Patch Plan" : "免费领改造方案"}
+                        </button>
+                      </form>
+                      {leadMsg && (
+                        <p className={`text-xs font-medium ${leadOk ? "text-emerald-300" : "text-red-300"}`}>
+                          {leadMsg}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1604,6 +1664,63 @@ export default function HomePage() {
                   <p className="text-xs sm:text-sm font-mono text-emerald-950 bg-emerald-50 border border-emerald-300 rounded-xl p-3.5">
                     {selectedQuestion.patchPrescription}
                   </p>
+                  <div className="pt-2 border-t border-black/10 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-[#111215]">
+                        {isEn
+                          ? "Next Step: Get a free 15-min async SIP trace check on your stack, or book our 48h SLA Audit:"
+                          : "下一步：输入企业邮箱免费获取贵司语音栈 15 分钟异步诊断，或直接预约 48h 压测交付："}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          trackHcEvent("b2b_modal_open", { src: "sim_ended_card" });
+                          setB2bModalPlan("audit");
+                        }}
+                        className="min-h-10 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer"
+                      >
+                        {isEn ? "Book 48h SIP Audit · $299 (≥40% Cut SLA) →" : "预约 48h 火焰图压测 · $299 →"}
+                      </button>
+                    </div>
+                    <form
+                      onSubmit={(ev) => {
+                        trackHcEvent("sim_lead_submit", { cutoffMs: lastMeasuredCutoffMs, src: "ended" });
+                        void handleLeadCaptureSubmit(ev);
+                      }}
+                      className="grid grid-cols-1 sm:grid-cols-12 gap-2"
+                    >
+                      <input
+                        type="email"
+                        required
+                        value={leadEmail}
+                        onChange={(ev) => setLeadEmail(ev.target.value)}
+                        placeholder={isEn ? "cto@your-voice-ai.com" : "输入企业邮箱"}
+                        className="sm:col-span-5 min-h-10 rounded-xl border border-black/20 bg-white px-3 py-2 text-xs text-[#111215] focus:border-emerald-600 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        required
+                        value={leadStack}
+                        onChange={(ev) => setLeadStack(ev.target.value)}
+                        placeholder={isEn ? "Twilio Media Streams / LiveKit / Vapi..." : "当前架构（如 Twilio / LiveKit）"}
+                        className="sm:col-span-4 min-h-10 rounded-xl border border-black/20 bg-white px-3 py-2 text-xs text-[#111215] focus:border-emerald-600 focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        disabled={leadLoading}
+                        className="sm:col-span-3 min-h-10 rounded-xl bg-[#111215] hover:bg-black text-white font-bold text-xs px-3 py-2 cursor-pointer disabled:opacity-60"
+                      >
+                        {leadLoading
+                          ? isEn ? "Sending..." : "提交中..."
+                          : isEn ? "Send Free Teardown" : "免费领架构诊断"}
+                      </button>
+                    </form>
+                    {leadMsg && (
+                      <p className={`text-xs font-semibold ${leadOk ? "text-emerald-700" : "text-red-600"}`}>
+                        {leadMsg}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
